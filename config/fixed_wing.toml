@@ -1,0 +1,92 @@
+# AeroCore fixed-wing-oriented baseline.
+# This uses the same rigid-body physics core with a single propulsion motor.
+
+[physics]
+gravity             = 9.80665
+air_density         = 1.225
+drag_coefficient    = 0.32
+ground_restitution  = 0.02
+ground_friction     = 0.7
+
+[drone]
+mass                = 1.8
+arm_length          = 0.20
+size                = 0.90
+airframe            = "fixed_wing"
+motor_count         = 1
+
+[battery]
+voltage_max             = 16.8
+capacity_ah             = 2.2
+internal_resistance     = 0.025
+
+[motor]
+response_time_constant  = 0.08
+max_rpm                 = 9000
+propeller_diameter      = 0.2286
+thrust_coefficient      = 0.09
+torque_coefficient      = 0.008
+efficiency              = 0.82
+max_thrust              = 14.0
+
+[pid_altitude]
+kp                  = 0.12
+ki                  = 0.02
+kd                  = 0.08
+output_min          = -0.30
+output_max          =  0.35
+integral_max        =  0.20
+derivative_filter   =  0.25
+
+[pid_roll]
+kp = 3.0
+ki = 0.0
+kd = 0.08
+
+[pid_pitch]
+kp = 3.0
+ki = 0.0
+kd = 0.08
+
+[pid_yaw]
+kp = 1.2
+ki = 0.0
+kd = 0.0
+
+[pid_roll_rate]
+kp = 0.06
+ki = 0.005
+kd = 0.001
+
+[pid_pitch_rate]
+kp = 0.06
+ki = 0.005
+kd = 0.001
+
+[pid_yaw_rate]
+kp = 0.04
+ki = 0.002
+kd = 0.0
+
+[flight]
+max_roll_angle_deg      = 30.0
+max_pitch_angle_deg     = 20.0
+max_roll_rate_deg_s     = 160.0
+max_pitch_rate_deg_s    = 120.0
+max_yaw_rate_deg_s      = 90.0
+max_tilt_angle_deg      = 35.0
+
+[imu]
+accel_rate_hz           = 1000.0
+accel_noise             = 0.05
+accel_drift             = 0.001
+gyro_rate_hz            = 1000.0
+gyro_noise              = 0.0017
+gyro_drift              = 0.0001
+comp_filter_alpha       = 0.98
+
+[simulation]
+dt                  = 0.004
+target_altitude     = 20.0
+wind_x              = 1.0
+wind_y              = 0.0

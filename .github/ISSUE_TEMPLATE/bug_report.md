@@ -1,0 +1,36 @@
+---
+name: Bug report
+about: Report a reproducible problem in AeroCore
+title: "[Bug] "
+labels: bug
+assignees: ""
+---
+
+## Summary
+
+Describe the problem clearly.
+
+## Steps To Reproduce
+
+1. 
+2. 
+3. 
+
+## Expected Behavior
+
+What should have happened?
+
+## Actual Behavior
+
+What happened instead?
+
+## Environment
+
+- OS:
+- Compiler:
+- CMake version:
+- Config file used:
+
+## Logs / Output
+
+Paste relevant output here.

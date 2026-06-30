@@ -1,0 +1,145 @@
+# ============================================================
+#  AeroCore Simulation Configuration
+#  Format: TOML subset (sections + key = value)
+#  All physical quantities in SI units unless noted.
+# ============================================================
+
+# ------------------------------------------------------------
+#  Physics engine
+# ------------------------------------------------------------
+[physics]
+gravity             = 9.80665   # m/s²  — standard gravity
+air_density         = 1.225     # kg/m³ — ISA sea-level density
+drag_coefficient    = 0.47      # Cd — sphere-like body (placeholder)
+ground_restitution  = 0.05      # Bounce coefficient [0=no bounce, 1=elastic]
+ground_friction     = 0.6       # Coulomb friction coefficient
+
+# ------------------------------------------------------------
+#  Drone (multirotor) vehicle
+# ------------------------------------------------------------
+[drone]
+mass                = 1.5       # kg  — total all-up weight
+arm_length          = 0.225     # m   — centre to motor (250 mm class)
+size                = 0.45      # m   — visual frame size
+airframe            = "multirotor" # multirotor | fixed_wing
+motor_count         = 4         # used for multirotor geometry and motor creation
+
+# ------------------------------------------------------------
+#  Battery (4S LiPo, 1500 mAh)
+# ------------------------------------------------------------
+[battery]
+voltage_max             = 16.8  # V   — 4.2 V × 4 cells
+capacity_ah             = 1.5   # Ah
+internal_resistance     = 0.02  # Ω
+
+# ------------------------------------------------------------
+#  Motor + propeller (2305 2400 KV, 5045 prop)
+# ------------------------------------------------------------
+[motor]
+response_time_constant  = 0.05  # s   — first-order time constant
+max_rpm                 = 10000 # RPM
+propeller_diameter      = 0.127 # m   = 5 inches
+thrust_coefficient      = 0.10  # Ct  — non-dimensional
+torque_coefficient      = 0.010 # Cq  — non-dimensional
+efficiency              = 0.85  # motor+ESC combined efficiency
+max_thrust              = 8.0   # N   — per motor at full throttle
+
+# ------------------------------------------------------------
+#  Altitude PID — output is throttle delta (unitless, added to hover_throttle)
+#  Kp = 0.15 means 1m error → +0.15 throttle delta
+# ------------------------------------------------------------
+[pid_altitude]
+kp                  = 0.15
+ki                  = 0.02
+kd                  = 0.12
+output_min          = -0.40
+output_max          =  0.40
+integral_max        =  0.20
+derivative_filter   =  0.25
+
+# ------------------------------------------------------------
+#  Roll angle PID (outer: angle → rate command)
+# ------------------------------------------------------------
+[pid_roll]
+kp = 6.0
+ki = 0.0
+kd = 0.3
+
+# ------------------------------------------------------------
+#  Pitch angle PID
+# ------------------------------------------------------------
+[pid_pitch]
+kp = 6.0
+ki = 0.0
+kd = 0.3
+
+# ------------------------------------------------------------
+#  Yaw angle PID
+# ------------------------------------------------------------
+[pid_yaw]
+kp = 4.0
+ki = 0.0
+kd = 0.1
+
+# ------------------------------------------------------------
+#  Roll rate PID (inner: rate → torque command)
+# ------------------------------------------------------------
+[pid_roll_rate]
+kp              = 0.15
+ki              = 0.05
+kd              = 0.003
+derivative_filter = 0.2
+integral_max    = 0.3
+
+# ------------------------------------------------------------
+#  Pitch rate PID
+# ------------------------------------------------------------
+[pid_pitch_rate]
+kp              = 0.15
+ki              = 0.05
+kd              = 0.003
+derivative_filter = 0.2
+integral_max    = 0.3
+
+# ------------------------------------------------------------
+#  Yaw rate PID
+# ------------------------------------------------------------
+[pid_yaw_rate]
+kp          = 0.20
+ki          = 0.02
+kd          = 0.0
+integral_max = 0.2
+
+# ------------------------------------------------------------
+#  Flight envelope limits
+# ------------------------------------------------------------
+[flight]
+max_roll_angle_deg      = 35.0  # degrees
+max_pitch_angle_deg     = 35.0  # degrees
+max_roll_rate_deg_s     = 220.0 # degrees/s
+max_pitch_rate_deg_s    = 220.0 # degrees/s
+max_yaw_rate_deg_s      = 180.0 # degrees/s
+max_tilt_angle_deg      = 45.0  # combined tilt limit
+
+# ------------------------------------------------------------
+#  IMU sensor model
+# ------------------------------------------------------------
+[imu]
+accel_rate_hz           = 1000.0
+accel_noise             = 0.05      # m/s² RMS
+accel_drift             = 0.001     # m/s²/s
+
+gyro_rate_hz            = 1000.0
+gyro_noise              = 0.0017    # rad/s RMS (~0.1 deg/s)
+gyro_drift              = 0.0001    # rad/s/s
+
+comp_filter_alpha       = 0.98      # complementary filter gyro trust
+
+# ------------------------------------------------------------
+#  Simulation control
+# ------------------------------------------------------------
+[simulation]
+dt                  = 0.004     # s   — physics timestep (250 Hz)
+target_altitude     = 10.0      # m   — initial target altitude
+wind_x              = 0.0       # m/s — North component (positive = headwind)
+wind_y              = 0.0       # m/s — East component
