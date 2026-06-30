@@ -7,6 +7,9 @@
  */
 
 #include "Simulation/SimulationEngine.h"
+#include "Core/ComplementaryEstimator.h"
+#include "platforms/sim/SimIMU.h"
+#include "platforms/sim/SimBarometer.h"
 #include "Utilities/Logger.h"
 
 #include <fstream>
@@ -50,8 +53,19 @@ SimulationEngine::SimulationEngine(const std::string& config_hint)
     altimeter_      = std::make_shared<Sensors::Altimeter>(50.0, 0.05, 0.001);
     battery_sensor_ = std::make_shared<Sensors::BatterySensor>(10.0, 0.02, 0.0);
 
+    estimator_ = std::make_unique<Core::ComplementaryEstimator>(config_);
+    sim_imu_   = std::make_unique<Platform::Sim::SimIMU>(imu_);
+    sim_baro_  = std::make_unique<Platform::Sim::SimBarometer>(altimeter_);
+
+    try {
+        const auto v = config_.get<std::string>("simulation", "perfect_state");
+        perfect_state_ = (v == "true" || v == "1");
+    } catch (...) {
+        perfect_state_ = true;
+    }
+
     flight_controller_ = std::make_unique<Flight::FlightController>(
-        drone_, imu_, altimeter_, battery_sensor_, config_);
+        drone_, imu_, altimeter_, battery_sensor_, *estimator_, config_);
 
     physics_.setInertiaTensor(drone_->getInertiaTensor());
     log.info("Physics engine initialised (RK4, NED frame)");
@@ -77,11 +91,23 @@ void SimulationEngine::stepPhysics() {
     const double rho = physics_.airDensityAtAltitude(altitude);
 
     const Math::Vector3d accel_world = state.acceleration;
-    const Math::Vector3d accel_body  =
-        Math::worldToBody(state.orientation, accel_world);
+    const Math::Vector3d gravity_world(0.0, 0.0, physics_.getGravity());
+  // MEMS specific force in body frame: proper acceleration minus gravity.
+    const Math::Vector3d specific_force_world = accel_world - gravity_world;
+    const Math::Vector3d accel_body =
+        Math::worldToBody(state.orientation, specific_force_world);
     imu_->update(physics_dt_, accel_body, state.angular_vel, state.orientation);
     altimeter_->update(physics_dt_, drone_->getAltitude());
     battery_sensor_->update(physics_dt_, drone_->getBatteryVoltage());
+
+    estimator_->predict(physics_dt_, sim_imu_->read());
+    estimator_->correctBaro(sim_baro_->read());
+
+    if (perfect_state_) {
+        estimator_->injectPerfectNavigation(state.position, state.velocity);
+    } else {
+        estimator_->clearPerfectNavigation();
+    }
 
     flight_controller_->update(physics_dt_);
     drone_->update(physics_dt_, rho);
@@ -98,6 +124,7 @@ void SimulationEngine::stepPhysics() {
 
 void SimulationEngine::reset() {
     drone_->reset();
+    estimator_->reset();
     flight_controller_->reset();
     physics_.setInertiaTensor(drone_->getInertiaTensor());
     wind_     = Math::Vector3d::Zero();
@@ -107,7 +134,7 @@ void SimulationEngine::reset() {
 
 void SimulationEngine::gatherTelemetry(TelemetryData& telemetry) const {
     const auto& state = drone_->getState();
-    const auto  euler = drone_->getEulerAngles();
+    const auto  euler = flight_controller_->getVehicleState().euler_rpy;
     const auto  diag  = flight_controller_->getDiagnostics();
     const double alt  = drone_->getAltitude();
     const double rho  = physics_.airDensityAtAltitude(alt);
@@ -170,6 +197,14 @@ const Math::Vector3d& SimulationEngine::wind() const { return wind_; }
 double SimulationEngine::simTime()   const { return sim_time_; }
 double SimulationEngine::physicsDt() const { return physics_dt_; }
 const std::string& SimulationEngine::configPath() const { return config_path_; }
+
+Core::ComplementaryEstimator& SimulationEngine::estimator() {
+    return *estimator_;
+}
+
+const Core::ComplementaryEstimator& SimulationEngine::estimator() const {
+    return *estimator_;
+}
 
 } // namespace Simulation
 } // namespace AeroCore

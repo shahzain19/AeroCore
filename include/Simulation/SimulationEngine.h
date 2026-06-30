@@ -20,6 +20,9 @@
 #include "Sensors/BatterySensor.h"
 #include "Simulation/TelemetryManager.h"
 #include "Math/Vector.h"
+#include "Core/ComplementaryEstimator.h"
+#include "platforms/sim/SimIMU.h"
+#include "platforms/sim/SimBarometer.h"
 
 #include <memory>
 #include <string>
@@ -55,6 +58,8 @@ public:
     double simTime()    const;
     double physicsDt()  const;
     const std::string& configPath() const;
+    Core::ComplementaryEstimator& estimator();
+    const Core::ComplementaryEstimator& estimator() const;
 
 private:
     std::string config_path_;
@@ -65,7 +70,12 @@ private:
     std::shared_ptr<Sensors::Altimeter>            altimeter_;
     std::shared_ptr<Sensors::BatterySensor>        battery_sensor_;
     std::unique_ptr<Flight::FlightController>      flight_controller_;
+    std::unique_ptr<Core::ComplementaryEstimator>  estimator_;
+    std::unique_ptr<Platform::Sim::SimIMU>       sim_imu_;
+    std::unique_ptr<Platform::Sim::SimBarometer>   sim_baro_;
     Physics::PhysicsEngine                         physics_;
+
+    bool perfect_state_ = true;
 
     Math::Vector3d wind_;
     double physics_dt_  = 0.004;

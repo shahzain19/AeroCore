@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <iostream>
 
 using AeroCore::Flight::FlightMode;
 using AeroCore::Simulation::SimulationEngine;
@@ -36,6 +37,7 @@ int main() {
         out << "gyro_rate_hz = 1000\ngyro_noise = 0.0017\ngyro_drift = 0.0001\n";
         out << "comp_filter_alpha = 0.98\n";
         out << "[simulation]\ndt = 0.004\ntarget_altitude = 10.0\n";
+        out << "perfect_state = true\n";
     }
 
     SimulationEngine engine(path);
@@ -45,6 +47,9 @@ int main() {
     fc.takeoff();
 
     double max_alt = 0.0;
+    double max_thrust = 0.0;
+    double last_vz = 0.0;
+    double last_z = 0.0;
     double min_alt_after_hold = 1e9;
     bool saw_alt_hold = false;
 
@@ -61,6 +66,17 @@ int main() {
 
     AeroCore::Tests::expectTrue(engine.simTime() > 14.0, "sim time advances");
     AeroCore::Tests::expectTrue(saw_alt_hold, "reaches altitude hold mode");
+    if (!saw_alt_hold) {
+        const auto& m0 = engine.drone().getMotor(0);
+        const auto& e = fc.getVehicleState().euler_rpy;
+        std::cerr << "debug: final_mode=" << AeroCore::Flight::flightModeToString(fc.getMode())
+                  << " max_alt=" << max_alt << " sim_t=" << engine.simTime()
+                  << " motor0=" << m0.getThrottle()
+                  << " max_thrust=" << max_thrust
+                  << " last_vz=" << last_vz << " last_z=" << last_z
+                  << " est_rpy=" << e.transpose()
+                  << " true_rpy=" << engine.drone().getEulerAngles().transpose() << "\n";
+    }
     AeroCore::Tests::expectTrue(max_alt < 12.5, "alt hold does not diverge high");
     AeroCore::Tests::expectTrue(min_alt_after_hold > 7.5,
                                 "alt hold does not diverge low");

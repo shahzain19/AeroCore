@@ -1,6 +1,17 @@
 # AeroCore Architecture
 
-## Runtime Pipeline
+AeroCore is evolving from a **desktop simulator** into a **portable flight-controller core** with platform-specific HAL backends. See [sim-to-production.md](sim-to-production.md) and [roadmap.md](roadmap.md).
+
+## Layered view
+
+```text
+FlightController / PID / FlightMode     ← portable (all targets)
+HAL (IIMU, IBarometer, IGPS, …)         ← interface in include/HAL/
+platforms/sim | stm32 | linux-sbc       ← implementations
+Physics / Renderer / SimulationEngine   ← sim target only
+```
+
+## Runtime Pipeline (sim target)
 
 `AeroCore` runs a fixed-step flight-control loop and separates simulation updates from rendering updates.
 
@@ -18,8 +29,11 @@
 ## Main Subsystems
 
 - `Flight/`: control logic, vehicle model, motor model, PID.
-- `Physics/`: environmental model and rigid-body integration.
-- `Sensors/`: noisy virtual sensors used by the controller.
+- `HAL/`: hardware abstraction interfaces for sensors, RC, motors, clock, estimator.
+- `platforms/`: sim and embedded HAL implementations (`platforms/sim/SimMotorOutput`, etc.).
+- `firmware/`: embedded entry points (scaffold; see `firmware/README.md`).
+- `Physics/`: environmental model and rigid-body integration (**sim only**).
+- `Sensors/`: noisy virtual sensors used by the controller (**sim backends**).
 - `Simulation/`: telemetry data and formatting for HUD/status output.
 - `Rendering/`: SFML visualization and keyboard input mapping.
 - `Utilities/`: config parser and logger.

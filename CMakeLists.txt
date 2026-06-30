@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
 
+# Generate compile_commands.json
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 project(AeroCore
     VERSION 2.0.0
-    DESCRIPTION "Open-source 6-DOF drone & fixed-wing flight simulator"
+    DESCRIPTION "Open-source flight controller: sim + embedded HAL"
     LANGUAGES CXX
 )
+
+# sim = desktop simulator (default); stm32/linux-sbc/esp32 = firmware (scaffold)
+set(AEROCORE_TARGET "sim" CACHE STRING "Build target: sim, stm32, linux-sbc, esp32")
 
 # ============================================================
 #  C++ standard
@@ -135,5 +141,13 @@ if(AEROCORE_BUILD_TESTS)
         src/Altimeter.cpp
         src/BatterySensor.cpp
         src/Logger.cpp
+        src/Core/ComplementaryEstimator.cpp
+        src/platforms/sim/SimIMU.cpp
+        src/platforms/sim/SimBarometer.cpp
+        src/HAL/Types.cpp
+    )
+    aerocore_add_test(test_estimator EXTRA_SOURCES
+        src/Core/ComplementaryEstimator.cpp
+        src/HAL/Types.cpp
     )
 endif()

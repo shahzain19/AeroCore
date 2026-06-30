@@ -1,7 +1,9 @@
-# AeroCore Flight Controller Simulator
+# AeroCore Flight Controller
 
-AeroCore is a C++20 flight-controller simulation project for multirotor and fixed-wing experimentation.  
-It combines vehicle dynamics, virtual sensors, PID-based control loops, and optional SFML visualization.
+AeroCore is a C++20 flight-controller project for multirotor and fixed-wing aircraft.  
+It provides PID-based control loops, a mode state machine, and a desktop physics simulator for tuning before hardware deployment.
+
+**Today:** desktop sim (SFML + headless). **Next:** HAL-backed firmware for STM32-class boards — see [roadmap](docs/roadmap.md).
 
 ## Core Features
 
@@ -109,6 +111,9 @@ Current tests:
 
 ## Documentation
 
+- `docs/roadmap.md` — real-world feature plan (phased)
+- `docs/sim-to-production.md` — sim → firmware migration
+- `docs/embedded-installation.md` — build & flash on STM32, ESP32, Pi, etc.
 - `docs/architecture.md`
 - `docs/build-and-run.md`
 - `docs/capabilities-and-limitations.md`

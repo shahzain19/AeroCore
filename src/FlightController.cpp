@@ -55,11 +55,13 @@ FlightController::FlightController(
         std::shared_ptr<Sensors::IMU>          imu,
         std::shared_ptr<Sensors::Altimeter>    altimeter,
         std::shared_ptr<Sensors::BatterySensor> battery_sensor,
+        HAL::IStateEstimator&                  estimator,
         const Utilities::Config& config)
     : drone_(std::move(drone))
     , imu_(std::move(imu))
     , altimeter_(std::move(altimeter))
     , battery_sensor_(std::move(battery_sensor))
+    , estimator_(estimator)
     , mode_(FlightMode::DISARMED)
     , target_altitude_(0.0)
     , target_position_(Math::Vector3d::Zero())
@@ -165,8 +167,18 @@ void FlightController::requestMode(FlightMode mode) {
         Utilities::Logger::getInstance().warning("Rejected: vehicle is DISARMED");
         return;
     }
+    if (mode == FlightMode::RETURN_HOME && !estimator_.state().position_valid) {
+        Utilities::Logger::getInstance().warning(
+            "Rejected RETURN_HOME: no position estimate");
+        return;
+    }
     if (mode == FlightMode::POSITION_HOLD) {
-        target_position_ = drone_->getPosition();
+        if (!estimator_.state().position_valid) {
+            Utilities::Logger::getInstance().warning(
+                "Rejected POSITION_HOLD: no position estimate");
+            return;
+        }
+        target_position_ = estimator_.state().position_ned;
     }
     if (mode == FlightMode::ALTITUDE_HOLD && mode_ == FlightMode::TAKEOFF) {
         transitionToAltitudeHold();
@@ -181,7 +193,7 @@ void FlightController::requestMode(FlightMode mode) {
 
 void FlightController::arm() {
     if (mode_ == FlightMode::DISARMED) {
-        home_position_   = drone_->getPosition();
+        home_position_   = currentPositionNed();
         target_position_ = home_position_;
         // Reset all PID state to prevent integrator wind-up from a previous flight
         pid_alt_->reset();
@@ -283,6 +295,34 @@ ControllerDiagnostics FlightController::getDiagnostics() const {
     return d;
 }
 
+const HAL::VehicleState& FlightController::getVehicleState() const {
+    return estimator_.state();
+}
+
+Math::Vector3d FlightController::currentPositionNed() const {
+    if (estimator_.state().position_valid) {
+        return estimator_.state().position_ned;
+    }
+    return drone_->getPosition();
+}
+
+double FlightController::currentVelocityDown() const {
+    if (estimator_.state().velocity_valid) {
+        return estimator_.state().velocity_ned.z();
+    }
+    return drone_->getVelocity().z();
+}
+
+void FlightController::enforceNavigationValidity() {
+    if (!requiresGPS(mode_)) return;
+    if (estimator_.state().position_valid) return;
+
+    Utilities::Logger::getInstance().warning(
+        "Lost position estimate — entering FAILSAFE");
+    logModeTransition(mode_, FlightMode::FAILSAFE);
+    mode_ = FlightMode::FAILSAFE;
+}
+
 // ============================================================
 //  Main update dispatch
 // ============================================================
@@ -295,6 +335,7 @@ void FlightController::update(double dt) {
     }
 
     if (checkFailsafe()) return;
+    enforceNavigationValidity();
 
     switch (mode_) {
         case FlightMode::DISARMED:      updateDisarmed(dt);     break;
@@ -354,7 +395,7 @@ void FlightController::updateLanding(double dt) {
 
     target_altitude_ = std::max(0.0, target_altitude_ - 1.0 * dt);
 
-    const double vz = drone_->getVelocity().z();
+    const double vz = currentVelocityDown();
     if (measured_alt < 0.1 && vz > -0.1) {
         disarm();
         return;
@@ -402,10 +443,8 @@ void FlightController::updateAltitudeHold(double dt) {
 }
 
 void FlightController::updatePositionHold(double dt) {
-    const auto& pos = drone_->getPosition();
+    const auto& pos = estimator_.state().position_ned;
     const Math::Vector3d pos_error = target_position_ - pos;
-
-    // Basic position P → attitude setpoints (sim uses ground-truth position).
     constexpr double kp_pos = 0.35;
     const double roll_sp  = clamp(-pos_error.y() * kp_pos, -max_roll_angle_, max_roll_angle_);
     const double pitch_sp = clamp( pos_error.x() * kp_pos, -max_pitch_angle_, max_pitch_angle_);
@@ -420,7 +459,7 @@ void FlightController::updateReturnHome(double dt) {
     target_position_ = home_position_;
     target_altitude_ = std::max(target_altitude_, -home_position_.z());
 
-    const auto& pos = drone_->getPosition();
+    const auto& pos = currentPositionNed();
     const Math::Vector3d pos_error = home_position_ - pos;
     const double horiz_dist = pos_error.head<2>().norm();
 
@@ -460,8 +499,8 @@ void FlightController::runAttitudeControl(double throttle_cmd,
                                            double pitch_angle_sp,
                                            double yaw_rate_sp,
                                            double dt) {
-    // Read IMU
-    const auto euler = drone_->getEulerAngles();  // true angles (from physics)
+    // Attitude from state estimator (IMU fusion), not physics ground truth.
+    const auto& euler = estimator_.state().euler_rpy;
     const auto& omega = imu_->getGyroscope().getAngularVelocity();
 
     // Outer loop: angle error → rate setpoint

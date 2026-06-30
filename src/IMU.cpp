@@ -89,9 +89,8 @@ void IMU::updateComplementaryFilter(double dt,
     double trust       = 0.0;
 
     if (a_mag > 0.5 * g_est && a_mag < 2.0 * g_est) {
-        // atan2-based tilt from gravity direction
-        roll_accel  = std::atan2(ay, az);
-        pitch_accel = std::atan2(-ax, std::sqrt(ay*ay + az*az));
+        roll_accel  = std::atan2(ay, -az);
+        pitch_accel = std::atan2(-ax, std::sqrt(ay * ay + az * az));
         trust = comp_alpha_;  // Use configured trust level
     } else {
         trust = 1.0;  // High-g: trust gyro fully

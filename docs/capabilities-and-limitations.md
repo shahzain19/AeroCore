@@ -55,12 +55,18 @@ This document tracks what AeroCore currently implements, what is partially imple
 
 ## Not Implemented Yet (Known Gaps)
 
+- **Embedded firmware targets**
+  - HAL interfaces exist (`include/HAL/`); STM32/ESP32/Linux SBC drivers and firmware loops are not complete. See `docs/embedded-installation.md`.
+- **Ground-truth shortcuts in flight controller**
+  - Attitude from physics euler (not IMU fusion); position hold uses simulator position, not GPS.
 - **Full mission navigation stack**
   - Waypoint path management and mission execution logic are not complete.
 - **High-fidelity environment/world model**
   - No terrain map, obstacle model, or advanced weather/turbulence model yet.
 - **Estimator stack**
   - No full EKF/state-estimation pipeline (GPS fusion, bias estimation, etc.).
+- **Hardware I/O**
+  - No DShot/PWM ESC output, CRSF/SBUS RC, or MAVLink in firmware yet.
 - **Comprehensive testing**
   - Integration test for `SimulationEngine` added; deeper FC/physics regression baselines still pending.
 - **Production operator UX**

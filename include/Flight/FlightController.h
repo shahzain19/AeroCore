@@ -53,6 +53,7 @@
 #include "Flight/FlightMode.h"
 #include "Flight/Drone.h"
 #include "Flight/PIDController.h"
+#include "HAL/IStateEstimator.h"
 #include "Sensors/IMU.h"
 #include "Sensors/Altimeter.h"
 #include "Sensors/BatterySensor.h"
@@ -119,7 +120,8 @@ public:
     FlightController(std::shared_ptr<Drone>                  drone,
                      std::shared_ptr<Sensors::IMU>            imu,
                      std::shared_ptr<Sensors::Altimeter>      altimeter,
-                     std::shared_ptr<Sensors::BatterySensor>  battery_sensor,
+                     std::shared_ptr<Sensors::BatterySensor> battery_sensor,
+                     HAL::IStateEstimator&                    estimator,
                      const Utilities::Config& config);
 
     // ----------------------------------------------------------
@@ -183,12 +185,16 @@ public:
     /// Full diagnostic snapshot.
     ControllerDiagnostics getDiagnostics() const;
 
+    /// Latest estimated vehicle state (attitude, position when valid).
+    const HAL::VehicleState& getVehicleState() const;
+
 private:
     // Shared resources
     std::shared_ptr<Drone>                 drone_;
     std::shared_ptr<Sensors::IMU>          imu_;
     std::shared_ptr<Sensors::Altimeter>    altimeter_;
     std::shared_ptr<Sensors::BatterySensor> battery_sensor_;
+    HAL::IStateEstimator&                  estimator_;
 
     // PIDs — altitude cascade
     std::unique_ptr<PIDController> pid_alt_;      ///< Altitude → throttle
@@ -264,6 +270,15 @@ private:
 
     /// Check for failsafe conditions (low battery, sensor loss, …).
     bool checkFailsafe();
+
+    /// Current NED position from estimator (falls back to drone in sim).
+    Math::Vector3d currentPositionNed() const;
+
+    /// Downward velocity [m/s] in NED (+Z = down).
+    double currentVelocityDown() const;
+
+    /// Reject or downgrade modes that need GPS when position is unavailable.
+    void enforceNavigationValidity();
 
     /// Log a mode transition.
     void logModeTransition(FlightMode from, FlightMode to);
