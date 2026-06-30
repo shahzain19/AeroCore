@@ -213,6 +213,7 @@ private:
     // Takeoff/landing ramp state
     double            takeoff_alt_ramp_;   ///< Current altitude ramp target [m]
     double            final_target_alt_;   ///< Ultimate target altitude for takeoff
+    Math::Vector3d    home_position_;    ///< Home position captured on arm [NED m]
 
     // Config-derived limits
     double max_roll_angle_;   ///< Max roll angle [rad] in ATT_HOLD
@@ -235,6 +236,7 @@ private:
     void updateAttitudeHold(double dt);
     void updateAltitudeHold(double dt);
     void updatePositionHold(double dt);
+    void updateReturnHome(double dt);
     void updateFailsafe(double dt);
 
     // ----------------------------------------------------------
@@ -265,6 +267,17 @@ private:
 
     /// Log a mode transition.
     void logModeTransition(FlightMode from, FlightMode to);
+
+    /// TAKEOFF → ALTITUDE_HOLD with PID state cleared.
+    void transitionToAltitudeHold();
+
+    /**
+     * @brief Altitude PID → collective throttle with hover-relative floor.
+     * @param min_throttle  Absolute minimum throttle [0,1].
+     * @param hover_floor   When true, floor is max(min_throttle, 70% of hover).
+     */
+    double computeAltitudeThrottle(double dt, double setpoint_alt,
+                                   double min_throttle, bool hover_floor);
 };
 
 } // namespace Flight

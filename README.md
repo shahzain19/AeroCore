@@ -46,6 +46,12 @@ cmake --build . -j"$(nproc)"
 
 ## Run
 
+Show usage:
+
+```bash
+./AeroCore --help
+```
+
 GUI mode:
 
 ```bash
@@ -96,6 +102,10 @@ Current tests:
 - `test_pid_controller`
 - `test_config`
 - `test_telemetry_manager`
+- `test_cli_args`
+- `test_flight_mode`
+- `test_physics_engine`
+- `test_simulation_engine`
 
 ## Documentation
 

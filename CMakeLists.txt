@@ -90,12 +90,21 @@ if(AEROCORE_BUILD_TESTS)
     enable_testing()
 
     function(aerocore_add_test TEST_NAME)
-        add_executable(${TEST_NAME}
+        set(options "")
+        set(oneValueArgs "")
+        set(multiValueArgs EXTRA_SOURCES)
+        cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+        set(SOURCES
             tests/${TEST_NAME}.cpp
-            src/PIDController.cpp
             src/Config.cpp
             src/TelemetryManager.cpp
         )
+        if(ARG_EXTRA_SOURCES)
+            list(APPEND SOURCES ${ARG_EXTRA_SOURCES})
+        endif()
+
+        add_executable(${TEST_NAME} ${SOURCES})
         target_include_directories(${TEST_NAME} PRIVATE
             ${PROJECT_SOURCE_DIR}/include
             ${PROJECT_SOURCE_DIR}/tests
@@ -106,7 +115,25 @@ if(AEROCORE_BUILD_TESTS)
         add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
     endfunction()
 
-    aerocore_add_test(test_pid_controller)
+    aerocore_add_test(test_pid_controller EXTRA_SOURCES src/PIDController.cpp)
     aerocore_add_test(test_config)
     aerocore_add_test(test_telemetry_manager)
+    aerocore_add_test(test_cli_args EXTRA_SOURCES src/CliArgs.cpp)
+    aerocore_add_test(test_flight_mode)
+    aerocore_add_test(test_physics_engine EXTRA_SOURCES src/PhysicsEngine.cpp)
+    aerocore_add_test(test_simulation_engine EXTRA_SOURCES
+        src/SimulationEngine.cpp
+        src/PhysicsEngine.cpp
+        src/Drone.cpp
+        src/Motor.cpp
+        src/FlightController.cpp
+        src/PIDController.cpp
+        src/IMU.cpp
+        src/Accelerometer.cpp
+        src/Gyroscope.cpp
+        src/Sensor.cpp
+        src/Altimeter.cpp
+        src/BatterySensor.cpp
+        src/Logger.cpp
+    )
 endif()

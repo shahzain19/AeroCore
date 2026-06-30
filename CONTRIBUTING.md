@@ -19,6 +19,7 @@ ctest --output-on-failure
 - Update docs when behavior or interfaces change.
 - Add or update tests when the change affects core logic or regression risk.
 - Preserve existing code style and keep comments concise.
+- Use `./AeroCore --help` and `docs/capabilities-and-limitations.md` to understand current scope before extending features.
 
 ## Pull Requests
 

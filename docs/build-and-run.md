@@ -22,6 +22,12 @@ cmake --build . -j"$(nproc)"
 ./AeroCore
 ```
 
+Show CLI usage:
+
+```bash
+./AeroCore --help
+```
+
 ## Run (Headless)
 
 ```bash

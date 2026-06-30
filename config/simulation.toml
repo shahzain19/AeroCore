@@ -49,12 +49,12 @@ max_thrust              = 8.0   # N   — per motor at full throttle
 #  Kp = 0.15 means 1m error → +0.15 throttle delta
 # ------------------------------------------------------------
 [pid_altitude]
-kp                  = 0.15
-ki                  = 0.02
-kd                  = 0.12
-output_min          = -0.40
-output_max          =  0.40
-integral_max        =  0.20
+kp                  = 0.12
+ki                  = 0.015
+kd                  = 0.15
+output_min          = -0.30
+output_max          =  0.30
+integral_max        =  0.15
 derivative_filter   =  0.25
 
 # ------------------------------------------------------------

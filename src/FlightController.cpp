@@ -66,6 +66,7 @@ FlightController::FlightController(
     , target_heading_(0.0)
     , takeoff_alt_ramp_(0.0)
     , final_target_alt_(0.0)
+    , home_position_(Math::Vector3d::Zero())
 {
     // Safe config read with fallback
     auto tryGet = [&](const std::string& sect, const std::string& key, double fb) -> double {
@@ -74,19 +75,10 @@ FlightController::FlightController(
     };
 
     // ---- Altitude PID ----
-    // Output is throttle delta around hover_throttle.
-    // With ±0.4 authority and hover at ~0.46, we can go from ~0.06 to ~0.86.
+    // Output is throttle delta around hover_throttle. Gains/limits come from config.
     pid_alt_ = std::make_unique<PIDController>(config, "pid_altitude");
-    pid_alt_->setGains(
-        tryGet("pid_altitude", "kp", 0.18),
-        tryGet("pid_altitude", "ki", 0.06),
-        tryGet("pid_altitude", "kd", 0.0)     // No derivative — integral handles steady-state
-    );
-    pid_alt_->setOutputLimits(-0.4, 0.45);
-    pid_alt_->setIntegralMax(0.40);
-    pid_alt_->setDerivativeFilter(0.5);
     pid_alt_->setAntiWindupMode(AntiWindupMode::BACK_CALC);
-    pid_alt_->setBackCalcGain(0.3);
+    pid_alt_->setBackCalcGain(tryGet("pid_altitude", "back_calc_gain", 0.3));
 
     // ---- Roll angle PID ----
     pid_roll_ = std::make_unique<PIDController>(
@@ -173,12 +165,24 @@ void FlightController::requestMode(FlightMode mode) {
         Utilities::Logger::getInstance().warning("Rejected: vehicle is DISARMED");
         return;
     }
+    if (mode == FlightMode::POSITION_HOLD) {
+        target_position_ = drone_->getPosition();
+    }
+    if (mode == FlightMode::ALTITUDE_HOLD && mode_ == FlightMode::TAKEOFF) {
+        transitionToAltitudeHold();
+        return;
+    }
+    if (mode == FlightMode::ALTITUDE_HOLD) {
+        pid_alt_->reset();
+    }
     logModeTransition(mode_, mode);
     mode_ = mode;
 }
 
 void FlightController::arm() {
     if (mode_ == FlightMode::DISARMED) {
+        home_position_   = drone_->getPosition();
+        target_position_ = home_position_;
         // Reset all PID state to prevent integrator wind-up from a previous flight
         pid_alt_->reset();
         pid_roll_->reset();
@@ -301,6 +305,7 @@ void FlightController::update(double dt) {
         case FlightMode::ATTITUDE_HOLD: updateAttitudeHold(dt); break;
         case FlightMode::ALTITUDE_HOLD: updateAltitudeHold(dt); break;
         case FlightMode::POSITION_HOLD: updatePositionHold(dt); break;
+        case FlightMode::RETURN_HOME:   updateReturnHome(dt);   break;
         case FlightMode::FAILSAFE:      updateFailsafe(dt);     break;
         default:
             updateDisarmed(dt);
@@ -326,53 +331,37 @@ void FlightController::updateArmed(double /*dt*/) {
 }
 
 void FlightController::updateTakeoff(double dt) {
-    // Ramp target altitude up at 3 m/s to reach the final target
-    const double ramp_rate = 2.0;  // m/s — conservative to match drone climb rate
+    const double ramp_rate = 2.0;
     takeoff_alt_ramp_ += ramp_rate * dt;
     if (takeoff_alt_ramp_ > final_target_alt_)
         takeoff_alt_ramp_ = final_target_alt_;
 
     const double measured_alt = altimeter_->getAltitude();
 
-    // Transition to ALTITUDE_HOLD when we're within 1 m of target
-    if (measured_alt >= final_target_alt_ - 1.0 && takeoff_alt_ramp_ >= final_target_alt_ - 0.5) {
-        logModeTransition(mode_, FlightMode::ALTITUDE_HOLD);
-        mode_ = FlightMode::ALTITUDE_HOLD;
-        target_altitude_ = final_target_alt_;
+    if (measured_alt >= final_target_alt_ - 1.0 &&
+        takeoff_alt_ramp_ >= final_target_alt_ - 0.5) {
+        transitionToAltitudeHold();
         return;
     }
 
-    // Altitude PID: setpoint = ramp, measurement = actual altitude
-    // Output = throttle delta around hover_throttle
-    // If on the ground with negative integral, reset to prevent ground-pin
-    if (measured_alt < 0.05 && pid_alt_->getIntegral() < 0.0) {
-        pid_alt_->reset();
-    }
-    double throttle_delta = pid_alt_->update(dt, takeoff_alt_ramp_, measured_alt);
-    double throttle_cmd   = hover_throttle_ + throttle_delta;
-    throttle_cmd = clamp(throttle_cmd, 0.05, 0.98);
-
-    // Level attitude during takeoff
+    const double throttle_cmd =
+        computeAltitudeThrottle(dt, takeoff_alt_ramp_, 0.05, false);
     runAttitudeControl(throttle_cmd, 0.0, 0.0, 0.0, dt);
 }
 
 void FlightController::updateLanding(double dt) {
     const double measured_alt = altimeter_->getAltitude();
 
-    // Ramp down at 1 m/s
     target_altitude_ = std::max(0.0, target_altitude_ - 1.0 * dt);
 
-    // Check if we've landed (altitude < 0.1 m and low vertical velocity)
-    const double vz = drone_->getVelocity().z();  // NED: positive = down
+    const double vz = drone_->getVelocity().z();
     if (measured_alt < 0.1 && vz > -0.1) {
         disarm();
         return;
     }
 
-    double throttle_delta = pid_alt_->update(dt, target_altitude_, measured_alt);
-    double throttle_cmd   = hover_throttle_ + throttle_delta;
-    throttle_cmd = clamp(throttle_cmd, 0.0, 0.95);
-
+    const double throttle_cmd =
+        computeAltitudeThrottle(dt, target_altitude_, 0.0, false);
     runAttitudeControl(throttle_cmd, 0.0, 0.0, 0.0, dt);
 }
 
@@ -402,10 +391,8 @@ void FlightController::updateAttitudeHold(double dt) {
 }
 
 void FlightController::updateAltitudeHold(double dt) {
-    const double measured_alt = altimeter_->getAltitude();
-    double throttle_delta = pid_alt_->update(dt, target_altitude_, measured_alt);
-    double throttle_cmd   = hover_throttle_ + throttle_delta;
-    throttle_cmd = clamp(throttle_cmd, 0.05, 0.98);
+    const double throttle_cmd =
+        computeAltitudeThrottle(dt, target_altitude_, 0.05, true);
 
     const double roll_sp     = pilot_input_.roll  * max_roll_angle_;
     const double pitch_sp    = pilot_input_.pitch * max_pitch_angle_;
@@ -415,21 +402,50 @@ void FlightController::updateAltitudeHold(double dt) {
 }
 
 void FlightController::updatePositionHold(double dt) {
-    // Altitude hold
-    const double measured_alt = altimeter_->getAltitude();
-    double throttle_delta = pid_alt_->update(dt, target_altitude_, measured_alt);
-    double throttle_cmd   = clamp(hover_throttle_ + throttle_delta, 0.05, 1.0);
+    const auto& pos = drone_->getPosition();
+    const Math::Vector3d pos_error = target_position_ - pos;
 
-    // Hold level attitude when no pilot input
-    runAttitudeControl(throttle_cmd, 0.0, 0.0, 0.0, dt);
+    // Basic position P → attitude setpoints (sim uses ground-truth position).
+    constexpr double kp_pos = 0.35;
+    const double roll_sp  = clamp(-pos_error.y() * kp_pos, -max_roll_angle_, max_roll_angle_);
+    const double pitch_sp = clamp( pos_error.x() * kp_pos, -max_pitch_angle_, max_pitch_angle_);
+
+    const double throttle_cmd =
+        computeAltitudeThrottle(dt, target_altitude_, 0.05, true);
+
+    runAttitudeControl(throttle_cmd, roll_sp, pitch_sp, 0.0, dt);
+}
+
+void FlightController::updateReturnHome(double dt) {
+    target_position_ = home_position_;
+    target_altitude_ = std::max(target_altitude_, -home_position_.z());
+
+    const auto& pos = drone_->getPosition();
+    const Math::Vector3d pos_error = home_position_ - pos;
+    const double horiz_dist = pos_error.head<2>().norm();
+
+    if (horiz_dist < 2.0) {
+        pid_alt_->reset();
+        logModeTransition(mode_, FlightMode::ALTITUDE_HOLD);
+        mode_ = FlightMode::ALTITUDE_HOLD;
+        return;
+    }
+
+    constexpr double kp_pos = 0.45;
+    const double roll_sp  = clamp(-pos_error.y() * kp_pos, -max_roll_angle_, max_roll_angle_);
+    const double pitch_sp = clamp( pos_error.x() * kp_pos, -max_pitch_angle_, max_pitch_angle_);
+
+    const double throttle_cmd =
+        computeAltitudeThrottle(dt, target_altitude_, 0.05, true);
+
+    runAttitudeControl(throttle_cmd, roll_sp, pitch_sp, 0.0, dt);
 }
 
 void FlightController::updateFailsafe(double dt) {
-    // Descend at 1 m/s to ground
     target_altitude_ = std::max(0.0, target_altitude_ - 1.0 * dt);
     const double measured_alt = altimeter_->getAltitude();
-    double throttle_delta = pid_alt_->update(dt, target_altitude_, measured_alt);
-    double throttle_cmd   = clamp(hover_throttle_ + throttle_delta, 0.0, 0.9);
+    const double throttle_cmd =
+        computeAltitudeThrottle(dt, target_altitude_, 0.0, true);
     runAttitudeControl(throttle_cmd, 0.0, 0.0, 0.0, dt);
 
     if (measured_alt < 0.1) disarm();
@@ -509,6 +525,32 @@ void FlightController::logModeTransition(FlightMode from, FlightMode to) {
     Utilities::Logger::getInstance().info(
         "Mode: " + flightModeToString(from) + " → " + flightModeToString(to)
     );
+}
+
+void FlightController::transitionToAltitudeHold() {
+    logModeTransition(mode_, FlightMode::ALTITUDE_HOLD);
+    mode_ = FlightMode::ALTITUDE_HOLD;
+    target_altitude_ = final_target_alt_;
+    pid_alt_->reset();
+}
+
+double FlightController::computeAltitudeThrottle(double dt, double setpoint_alt,
+                                                  double min_throttle,
+                                                  bool hover_floor) {
+    const double measured_alt = altimeter_->getAltitude();
+
+    if (measured_alt < 0.05 && pid_alt_->getIntegral() < 0.0) {
+        pid_alt_->reset();
+    }
+
+    const double throttle_delta = pid_alt_->update(dt, setpoint_alt, measured_alt);
+    double throttle_cmd = hover_throttle_ + throttle_delta;
+
+    double floor = min_throttle;
+    if (hover_floor) {
+        floor = std::max(min_throttle, hover_throttle_ * 0.70);
+    }
+    return clamp(throttle_cmd, floor, 0.98);
 }
 
 } // namespace Flight
