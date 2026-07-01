@@ -11,6 +11,11 @@ project(AeroCore
 
 # sim = desktop simulator (default); stm32/linux-sbc/esp32 = firmware scaffolds
 set(AEROCORE_TARGET "sim" CACHE STRING "Build target: sim, stm32, linux-sbc, esp32")
+set(AEROCORE_VALID_TARGETS sim stm32 linux-sbc esp32)
+list(FIND AEROCORE_VALID_TARGETS "${AEROCORE_TARGET}" _aerocore_target_index)
+if(_aerocore_target_index EQUAL -1)
+    message(FATAL_ERROR "Unsupported AEROCORE_TARGET '${AEROCORE_TARGET}'. Supported values: sim, stm32, linux-sbc, esp32")
+endif()
 
 # ============================================================
 #  C++ standard
@@ -37,6 +42,7 @@ endif()
 # ============================================================
 #  Dependencies
 # ============================================================
+include(GNUInstallDirs)
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 if(AEROCORE_BUILD_SIM)
     find_package(SFML COMPONENTS Graphics Window System REQUIRED)
@@ -79,6 +85,13 @@ target_include_directories(AeroCoreCore PUBLIC
 target_link_libraries(AeroCoreCore PUBLIC Eigen3::Eigen)
 target_compile_definitions(AeroCoreCore PRIVATE AEROCORE_BUILD_CORE)
 
+install(TARGETS AeroCoreCore
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
 if(AEROCORE_BUILD_SIM)
     add_library(AeroCoreSim STATIC ${SIM_ONLY_SOURCES})
     target_include_directories(AeroCoreSim PUBLIC
@@ -101,8 +114,9 @@ if(AEROCORE_BUILD_SIM)
         COMMENT "Copying config files to build directory"
     )
 
-    install(TARGETS ${PROJECT_NAME} DESTINATION bin)
-    install(DIRECTORY config/ DESTINATION share/aerocore/config)
+    install(TARGETS AeroCoreSim ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(DIRECTORY config/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aerocore/config)
 endif()
 
 # ============================================================

@@ -1,9 +1,9 @@
 # AeroCore Flight Controller
 
 AeroCore is a C++20 flight-controller project for multirotor and fixed-wing aircraft.  
-It provides PID-based control loops, a mode state machine, and a desktop physics simulator for tuning before hardware deployment.
+It focuses on a simulation-first workflow: portable control logic, a desktop physics simulator, and a clear path toward firmware targets for real embedded hardware.
 
-**Today:** desktop sim (SFML + headless). **Next:** HAL-backed firmware for STM32-class boards — see [roadmap](docs/roadmap.md).
+**Today:** desktop simulation with headless and GUI modes. **Next:** HAL-backed firmware scaffolding for STM32-class boards and other embedded targets — see [docs/sim-to-production.md](docs/sim-to-production.md) and [docs/personal-docs/roadmap.md](docs/personal-docs/roadmap.md).
 
 ## Core Features
 
@@ -39,7 +39,7 @@ AeroCore/
 
 ## Build
 
-AeroCore defaults to the desktop simulator target. To build the simulator:
+AeroCore supports multiple build targets through CMake. The default desktop simulator target is the easiest way to get started:
 
 ```bash
 mkdir -p build
@@ -48,7 +48,7 @@ cmake -DAEROCORE_TARGET=sim ..
 cmake --build . -j"$(nproc)"
 ```
 
-To prepare a firmware-style target scaffold without the simulator executable:
+For a firmware-style scaffold without the simulator executable:
 
 ```bash
 mkdir -p build-stm32
@@ -56,6 +56,8 @@ cd build-stm32
 cmake -DAEROCORE_TARGET=stm32 -DAEROCORE_BUILD_TESTS=OFF ..
 cmake --build . -j"$(nproc)"
 ```
+
+Other supported targets include `linux-sbc` and `esp32`.
 
 ## Run
 
