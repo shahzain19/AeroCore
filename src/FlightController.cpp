@@ -222,6 +222,9 @@ void FlightController::disarm() {
     for (size_t i = 0; i < drone_->getMotorCount(); ++i) {
         drone_->setMotorThrottle(i, 0.0);
     }
+    if (motor_output_) {
+        motor_output_->disarmAll();
+    }
 }
 
 void FlightController::takeoff() {
@@ -274,6 +277,10 @@ void FlightController::setPilotInput(const PilotInput& input) {
 
 void FlightController::setRCInput(HAL::IRCInput* rc_input) {
     rc_input_ = rc_input;
+}
+
+void FlightController::setMotorOutput(HAL::IMotorOutput* motor_output) {
+    motor_output_ = motor_output;
 }
 
 void FlightController::syncPilotFromRC() {
@@ -419,12 +426,18 @@ void FlightController::updateDisarmed(double /*dt*/) {
     for (size_t i = 0; i < drone_->getMotorCount(); ++i) {
         drone_->setMotorThrottle(i, 0.0);
     }
+    if (motor_output_) {
+        motor_output_->disarmAll();
+    }
 }
 
 void FlightController::updateArmed(double /*dt*/) {
     // Motors at minimum idle (e.g. 5%) so ESCs stay calibrated
     for (size_t i = 0; i < drone_->getMotorCount(); ++i) {
         drone_->setMotorThrottle(i, 0.05);
+        if (motor_output_ && i < motor_output_->motorCount()) {
+            motor_output_->write(i, 0.05);
+        }
     }
 }
 
@@ -594,6 +607,12 @@ void FlightController::mixMotors(double throttle, double roll,
     cmd.pitch    = clamp(pitch,   -1.0, 1.0);
     cmd.yaw      = clamp(yaw,     -1.0, 1.0);
     drone_->applyControl(cmd);
+    if (motor_output_) {
+        const size_t output_count = std::min(drone_->getMotorCount(), motor_output_->motorCount());
+        for (size_t i = 0; i < output_count; ++i) {
+            motor_output_->write(i, drone_->getMotor(i).getThrottle());
+        }
+    }
 }
 
 // ============================================================

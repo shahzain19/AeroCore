@@ -3,7 +3,7 @@
 AeroCore is a C++20 flight-controller project for multirotor and fixed-wing aircraft.  
 It focuses on a simulation-first workflow: portable control logic, a desktop physics simulator, and a clear path toward firmware targets for real embedded hardware.
 
-**Today:** desktop simulation with headless and GUI modes. **Next:** HAL-backed firmware scaffolding for STM32-class boards and other embedded targets — see [docs/sim-to-production.md](docs/sim-to-production.md) and [docs/personal-docs/roadmap.md](docs/personal-docs/roadmap.md).
+**Today:** desktop simulation with headless and GUI modes. **Next:** HAL-backed firmware scaffolding for STM32-class boards and other embedded targets — see [docs/sim-to-production.md](docs/sim-to-production.md), [docs/roadmap.md](docs/roadmap.md), and [docs/personal-docs/roadmap.md](docs/personal-docs/roadmap.md).
 
 ## Core Features
 
@@ -135,7 +135,7 @@ Current tests:
 
 ## Documentation
 
-- `docs/roadmap.md` — real-world feature plan (phased)
+- `docs/roadmap.md` — concise next-feature plan and execution order
 - `docs/sim-to-production.md` — sim → firmware migration path and current status
 - `docs/embedded-installation.md` — board support, build targets, and hardware porting notes
 - `docs/architecture.md`

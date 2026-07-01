@@ -26,3 +26,5 @@ ctest --output-on-failure
 
 - Tests use a lightweight in-repo harness (`tests/test_common.h`) to avoid external test framework dependencies.
 - These tests validate foundational behavior; integration and rendering-path tests can be added incrementally in future iterations.
+- Recent additions include physics regression coverage for drag, gravity, and atmospheric density behavior in `test_physics_airdrag`.
+- The next test expansion areas are estimator-driven state transitions, RC/motor HAL behavior, and fail-safe mode handling.

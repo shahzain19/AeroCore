@@ -161,6 +161,7 @@ if(AEROCORE_BUILD_TESTS)
     aerocore_add_test(test_flight_mode)
     aerocore_add_test(test_motor_output)
     aerocore_add_test(test_physics_engine)
+    aerocore_add_test(test_physics_airdrag)
     aerocore_add_test(test_estimator)
 
     if(AEROCORE_BUILD_SIM)

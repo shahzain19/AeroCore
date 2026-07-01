@@ -63,6 +63,7 @@ public:
     const Core::ComplementaryEstimator& estimator() const;
     Platform::Sim::SimRCInput& rcInput();
     const Platform::Sim::SimRCInput& rcInput() const;
+    bool perfectState() const;
 
     void setPerfectState(bool enabled);
 
@@ -81,7 +82,7 @@ private:
     std::unique_ptr<Platform::Sim::SimRCInput>     sim_rc_;
     Physics::PhysicsEngine                         physics_;
 
-    bool perfect_state_ = true;
+    bool perfect_state_ = false;
 
     Math::Vector3d wind_;
     double physics_dt_  = 0.004;

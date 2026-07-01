@@ -11,6 +11,8 @@ Firmware entry points for embedded and SBC deployments. The desktop **simulator*
 | `linux-sbc` | Linux + PREEMPT | 500 Hz–1 kHz | Scaffold only |
 | `esp32` | ESP32-S3 | Bridge / companion | Scaffold only |
 
+AeroCore now contains a portable flight controller core that can forward motor commands through `HAL::IMotorOutput`. Device-specific ESC and PWM drivers are still required to complete a firmware port.
+
 ## Build (when implemented)
 
 ```bash

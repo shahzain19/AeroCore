@@ -55,6 +55,7 @@
 #include "Flight/PIDController.h"
 #include "HAL/IStateEstimator.h"
 #include "HAL/IRCInput.h"
+#include "HAL/IMotorOutput.h"
 #include "Sensors/IMU.h"
 #include "Sensors/Altimeter.h"
 #include "Sensors/BatterySensor.h"
@@ -173,6 +174,7 @@ public:
 
     /// Bind RC receiver; pilot sticks synced each update() when set.
     void setRCInput(HAL::IRCInput* rc_input);
+    void setMotorOutput(HAL::IMotorOutput* motor_output);
 
     /// True when arming preconditions are satisfied.
     bool canArm() const;
@@ -207,6 +209,7 @@ private:
     std::shared_ptr<Sensors::BatterySensor> battery_sensor_;
     HAL::IStateEstimator&                  estimator_;
     HAL::IRCInput*                         rc_input_{nullptr};
+    HAL::IMotorOutput*                     motor_output_{nullptr};
 
     // PIDs — altitude cascade
     std::unique_ptr<PIDController> pid_alt_;      ///< Altitude → throttle

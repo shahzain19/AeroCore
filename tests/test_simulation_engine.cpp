@@ -12,6 +12,9 @@ int main() {
     SimulationEngine engine("config/simulation.toml");
     auto& fc = engine.flightController();
 
+    AeroCore::Tests::expectTrue(!engine.perfectState(),
+                                "simulator defaults to estimator-driven state");
+
     for (int i = 0; i < 250; ++i) engine.stepPhysics();
 
     fc.arm();

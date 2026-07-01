@@ -51,3 +51,14 @@ Headless mode runs the same simulation stack as the GUI path, but:
 - skips SFML renderer creation,
 - automatically arms and starts takeoff,
 - prints a compact status line at a configurable rate.
+
+## Planned next features
+
+The next major milestones are focused on closing the gap between the simulator and a real flight controller:
+
+1. Estimator-driven control flow so the flight controller consumes fused sensor state rather than perfect-state shortcuts.
+2. Hardware backend support for RC input and motor output on a concrete embedded target.
+3. Safety and failsafe hardening for arming, RC loss, and low-battery behavior.
+4. GPS-backed position hold and return-to-home primitives.
+
+The public roadmap summary lives in [roadmap.md](roadmap.md) and the deeper implementation-oriented plan remains in [personal-docs/roadmap.md](personal-docs/roadmap.md).

@@ -144,4 +144,4 @@ dt                  = 0.004     # s   — physics timestep (250 Hz)
 target_altitude     = 10.0      # m   — initial target altitude
 wind_x              = 0.0       # m/s — North component (positive = headwind)
 wind_y              = 0.0       # m/s — East component
-perfect_state       = true      # true: ground-truth attitude/position for sim; false: IMU/GPS only
+perfect_state       = false     # true: ground-truth attitude/position for sim; false: IMU/GPS only

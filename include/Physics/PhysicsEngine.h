@@ -188,6 +188,20 @@ public:
      */
     double airDensityAtAltitude(double altitude_m) const;
 
+    /// Gravity force in NED world frame [N].
+    Math::Vector3d gravityForce(double mass, double altitude_m) const;
+
+    /**
+     * @brief Aerodynamic drag force in world frame [N].
+     *
+     * Uses relative velocity w.r.t. wind to model effective drag.
+     */
+    Math::Vector3d dragForce(const Math::Vector3d& velocity_world,
+                             const Math::Vector3d& wind_world,
+                             double drag_coeff,
+                             double ref_area,
+                             double altitude_m) const;
+
 private:
     double         gravity_;          ///< Gravitational acceleration [m/s²]
     double         base_density_;     ///< Sea-level air density [kg/m³]
@@ -229,20 +243,6 @@ private:
     // ----------------------------------------------------------
     //  Individual force/torque calculations
     // ----------------------------------------------------------
-
-    /// Gravity force in NED world frame [N].
-    Math::Vector3d gravityForce(double mass, double altitude_m) const;
-
-    /**
-     * @brief Aerodynamic drag force in world frame [N].
-     *
-     * Uses relative velocity w.r.t. wind to model effective drag.
-     */
-    Math::Vector3d dragForce(const Math::Vector3d& velocity_world,
-                             const Math::Vector3d& wind_world,
-                             double drag_coeff,
-                             double ref_area,
-                             double altitude_m) const;
 
     /**
      * @brief Gyroscopic cross-coupling torque: −ω × (J·ω).

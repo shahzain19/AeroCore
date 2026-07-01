@@ -201,6 +201,8 @@ double SimulationEngine::simTime()   const { return sim_time_; }
 double SimulationEngine::physicsDt() const { return physics_dt_; }
 const std::string& SimulationEngine::configPath() const { return config_path_; }
 
+bool SimulationEngine::perfectState() const { return perfect_state_; }
+
 Core::ComplementaryEstimator& SimulationEngine::estimator() {
     return *estimator_;
 }
