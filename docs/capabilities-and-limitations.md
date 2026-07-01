@@ -14,6 +14,9 @@ This document tracks what AeroCore currently implements, what is partially imple
   - FSM with arming, takeoff, and altitude-hold transitions.
   - PID-based control components (`Flight::PIDController`).
   - Mode request handling for multiple flight modes.
+- **Autonomy and guidance**
+  - Basic autonomous behaviors such as altitude hold, return-home, and mission-mode scaffolding are implemented in simulation.
+  - The system can make mode-based decisions and close the loop on state feedback in the simulator.
 - **Sensor simulation**
   - IMU (accelerometer + gyroscope), altimeter, battery sensor.
   - Sensor values are propagated into telemetry each simulation step.
@@ -60,6 +63,9 @@ This document tracks what AeroCore currently implements, what is partially imple
 - **Ground-truth shortcuts in flight controller**
   - With `simulation.perfect_state = true` (default), attitude and position come from the estimator fed by physics truth for POS_HOLD/RTH. Set `perfect_state = false` to exercise noisy IMU-only fusion.
   - Full GPS sensor model not implemented; position modes still rely on perfect-state injection in sim.
+- **Full autonomy stack**
+  - The repo has autonomy primitives and basic autonomous scenarios, but not a complete production-grade autonomy stack.
+  - Missing full EKF/state estimation, mission path following, and robust embedded hardware execution.
 - **Full mission navigation stack**
   - Waypoint path management and mission execution logic are not complete.
 - **High-fidelity environment/world model**

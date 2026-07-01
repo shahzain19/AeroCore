@@ -16,6 +16,12 @@ It focuses on a simulation-first workflow: portable control logic, a desktop phy
 - Telemetry/HUD formatting plus status-line output.
 - Unit-style tests for key subsystems.
 
+## Autonomy Status
+
+- The codebase already includes autonomy-facing behavior in simulation, including mode transitions, altitude-hold, return-home guidance, and mission-mode scaffolding.
+- This is best described as an autonomy prototype and research platform, not a finished production autopilot.
+- Remaining autonomy gaps include full state estimation, GPS/mission navigation, robust failure handling, and embedded hardware I/O.
+
 ## Project Layout
 
 ```text

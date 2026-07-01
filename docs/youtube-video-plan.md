@@ -169,6 +169,7 @@ It shows that real engineering is not about making things work once. It is about
 
 ### Be explicit
 
+- the codebase already contains autonomy-facing primitives: mode transitions, altitude-hold, return-home, and mission scaffolding in simulation
 - no full EKF/state-estimation stack yet
 - no complete GPS fusion or navigation pipeline
 - no full hardware driver stack
