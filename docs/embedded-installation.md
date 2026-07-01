@@ -20,6 +20,7 @@ The current repo state is:
 
 - Desktop simulator: fully supported and runnable.
 - Firmware scaffolds: `AEROCORE_TARGET=stm32|linux-sbc|esp32` can configure and build the portable core library, but board-specific drivers and final firmware images are still under development.
+- Flight controller HAL routing: `FlightController` now supports optional motor command forwarding through `HAL::IMotorOutput`, simplifying future ESC/hardware bindings.
 
 ---
 

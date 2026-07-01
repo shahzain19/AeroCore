@@ -73,7 +73,8 @@ This document tracks what AeroCore currently implements, what is partially imple
 - **Estimator stack**
   - No full EKF/state-estimation pipeline (GPS fusion, bias estimation, etc.).
 - **Hardware I/O**
-  - No DShot/PWM ESC output, CRSF/SBUS RC, or MAVLink in firmware yet.
+  - No DShot/PWM ESC output, CRSF/SBUS RC, or MAVLink in firmware yet. The flight controller core now supports HAL motor output forwarding, but hardware-specific motor drivers are still pending.
+- Test coverage has been expanded to include HAL motor output forwarding and disarm propagation in the flight controller.
 - **Comprehensive testing**
   - Integration test for `SimulationEngine` added; deeper FC/physics regression baselines still pending.
 - **Production operator UX**

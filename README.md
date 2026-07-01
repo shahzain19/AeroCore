@@ -131,6 +131,7 @@ Current tests:
 - `test_estimator`: state estimation and sensor bias learning.
 - `test_pre_arm`: arming safety checks (throttle, level, sensors).
 - `test_imu_fusion`: IMU attitude filtering and fusion.
+- `test_motor_output`: HAL motor output forwarding and disarm command routing.
 
 ## Documentation
 

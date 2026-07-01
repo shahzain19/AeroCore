@@ -50,6 +50,22 @@ Useful options:
 - `--debug-headless`: enable early detailed debug prints.
 - `--no-perfect-state`: disable perfect-state simulator state injection and exercise the estimator with noisy simulated sensors.
 
+## Run tests
+
+From the build directory:
+
+```bash
+cmake -DAEROCORE_BUILD_TESTS=ON ..
+cmake --build . -j"$(nproc)"
+ctest --output-on-failure
+```
+
+You can also run a specific unit test directly:
+
+```bash
+./test_motor_output
+```
+
 You can also pass a config file path:
 
 ```bash
