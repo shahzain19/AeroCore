@@ -14,12 +14,17 @@ This document tracks what AeroCore currently implements, what is partially imple
   - FSM with arming, takeoff, and altitude-hold transitions.
   - PID-based control components (`Flight::PIDController`).
   - Mode request handling for multiple flight modes.
+  - **Estimator-driven control**: Flight controller now uses estimator state exclusively, no ground-truth shortcuts.
 - **Autonomy and guidance**
   - Basic autonomous behaviors such as altitude hold, return-home, and mission-mode scaffolding are implemented in simulation.
   - The system can make mode-based decisions and close the loop on state feedback in the simulator.
 - **Sensor simulation**
   - IMU (accelerometer + gyroscope), altimeter, battery sensor.
   - Sensor values are propagated into telemetry each simulation step.
+- **State estimation**
+  - Complementary filter attitude estimation (roll/pitch from IMU fusion).
+  - **Default estimator-driven mode**: Simulation now defaults to noisy sensor data rather than perfect state injection.
+  - Optional perfect-state injection for testing via `--no-perfect-state` CLI flag.
 - **Telemetry and visualization**
   - Rich HUD string generation for GUI rendering.
   - Headless status-line telemetry output at configurable rate.
@@ -35,6 +40,11 @@ This document tracks what AeroCore currently implements, what is partially imple
   - `Simulation::SimulationEngine` — shared physics/sensor/FC stack.
   - `Simulation::HeadedSimulation` — SFML GUI runner.
   - `Simulation::HeadlessSimulation` — console auto-flight runner.
+- **Hardware Abstraction Layer (HAL)**
+  - Complete HAL interface definitions for IMU, barometer, GPS, battery, RC input, motor output, clock, and state estimator.
+  - **STM32 HAL implementations**: Motor output (PWM/DShot) and RC input (SBUS/CRSF) drivers created as scaffolds.
+  - STM32 platform configuration system with board-specific pin mappings.
+  - CMake build target for STM32 firmware scaffold.
 - **Test coverage (current)**
   - `test_pid_controller`
   - `test_config`
@@ -43,6 +53,10 @@ This document tracks what AeroCore currently implements, what is partially imple
   - `test_flight_mode`
   - `test_physics_engine`
   - `test_simulation_engine`
+  - `test_motor_output` (HAL motor output forwarding)
+  - `test_estimator`
+  - `test_pre_arm`
+  - `test_imu_fusion`
 
 ## Partially Implemented / Basic-Only
 
@@ -58,11 +72,12 @@ This document tracks what AeroCore currently implements, what is partially imple
 
 ## Not Implemented Yet (Known Gaps)
 
-- **Embedded firmware targets**
-  - HAL interfaces exist (`include/HAL/`); STM32/ESP32/Linux SBC drivers and firmware loops are not complete. See `docs/embedded-installation.md`.
-- **Ground-truth shortcuts in flight controller**
-  - With `simulation.perfect_state = true` (default), attitude and position come from the estimator fed by physics truth for POS_HOLD/RTH. Set `simulation.perfect_state = false` or run with `--no-perfect-state` to exercise noisy IMU-only fusion.
-  - Full GPS sensor model not implemented; position modes still rely on perfect-state injection in sim.
+- **Complete STM32 firmware implementation**
+  - HAL interfaces and STM32 driver scaffolds exist (`include/platforms/stm32/`), but full STM32 HAL integration is not complete.
+  - STM32 drivers need actual STM32 HAL library integration, GPIO/Timer/UART peripheral initialization, and interrupt handlers.
+  - Firmware build requires ARM toolchain setup (arm-none-eabi-gcc), STM32 HAL/LL drivers, and linker scripts.
+- **Full GPS sensor model**
+  - Position modes still rely on estimator state injection in sim (no GPS sensor model yet).
 - **Full autonomy stack**
   - The repo has autonomy primitives and basic autonomous scenarios, but not a complete production-grade autonomy stack.
   - Missing full EKF/state estimation, mission path following, and robust embedded hardware execution.
@@ -70,11 +85,12 @@ This document tracks what AeroCore currently implements, what is partially imple
   - Waypoint path management and mission execution logic are not complete.
 - **High-fidelity environment/world model**
   - No terrain map, obstacle model, or advanced weather/turbulence model yet.
-- **Estimator stack**
-  - No full EKF/state-estimation pipeline (GPS fusion, bias estimation, etc.).
-- **Hardware I/O**
-  - No DShot/PWM ESC output, CRSF/SBUS RC, or MAVLink in firmware yet. The flight controller core now supports HAL motor output forwarding, but hardware-specific motor drivers are still pending.
-- Test coverage has been expanded to include HAL motor output forwarding and disarm propagation in the flight controller.
+- **Advanced estimator stack**
+  - No full EKF/state-estimation pipeline (GPS fusion, bias estimation, etc.) - currently using complementary filter.
+- **Complete hardware I/O integration**
+  - STM32 motor output and RC input drivers are scaffolds with placeholder implementations.
+  - Need actual DShot/PWM ESC output, CRSF/SBUS RC integration, and interrupt handlers.
+  - No MAVLink implementation yet.
 - **Comprehensive testing**
   - Integration test for `SimulationEngine` added; deeper FC/physics regression baselines still pending.
 - **Production operator UX**
@@ -83,5 +99,7 @@ This document tracks what AeroCore currently implements, what is partially imple
 ## Current Practical Expectations
 
 - Use AeroCore for **control-loop experimentation, mode-transition debugging, and simulation prototyping**.
+- The simulator now runs in estimator-driven mode by default, providing realistic sensor-based control.
 - The repo now supports a simulator target plus firmware scaffold targets for `stm32`, `linux-sbc`, and `esp32`.
+- STM32 HAL scaffolds are in place but require STM32 HAL library integration for actual hardware builds.
 - Do not treat current outputs as a **certified autopilot or high-fidelity aerodynamics benchmark**.

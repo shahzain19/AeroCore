@@ -362,17 +362,21 @@ const HAL::VehicleState& FlightController::getVehicleState() const {
 }
 
 Math::Vector3d FlightController::currentPositionNed() const {
+    // Estimator-driven: always use estimator state, never fall back to ground truth
+    // If position is invalid, return zero and let mode validation handle it
     if (estimator_.state().position_valid) {
         return estimator_.state().position_ned;
     }
-    return drone_->getPosition();
+    return Math::Vector3d::Zero();
 }
 
 double FlightController::currentVelocityDown() const {
+    // Estimator-driven: always use estimator state, never fall back to ground truth
+    // If velocity is invalid, return zero and let mode validation handle it
     if (estimator_.state().velocity_valid) {
         return estimator_.state().velocity_ned.z();
     }
-    return drone_->getVelocity().z();
+    return 0.0;
 }
 
 void FlightController::enforceNavigationValidity() {

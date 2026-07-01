@@ -7,6 +7,9 @@ This document explains the current AeroCore migration path from a desktop simula
 - The simulator target is fully supported and builds as the primary user-facing path.
 - A portable core library (`AeroCoreCore`) is now separated from simulator-specific code.
 - Simulator-only code lives in `AeroCoreSim` and is gated behind `AEROCORE_TARGET=sim`.
+- **Estimator-driven control**: Flight controller now uses estimator state exclusively, with simulation defaulting to noisy sensor data (no perfect-state shortcuts).
+- **STM32 HAL scaffolds**: Motor output (PWM/DShot) and RC input (SBUS/CRSF) drivers implemented as scaffolds with placeholder hardware integration.
+- STM32 platform configuration system created with board-specific pin mappings and peripheral assignments.
 - Firmware-style targets (`stm32`, `linux-sbc`, `esp32`) are scaffolded in the build system, but board-specific drivers and final firmware images are still under development.
 
 ## What this migration solves

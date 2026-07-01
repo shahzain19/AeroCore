@@ -10,29 +10,51 @@ It focuses on a simulation-first workflow: portable control logic, a desktop phy
 - Fixed-step physics simulation with RK4 integration.
 - Vehicle/propulsion simulation (`Flight::Drone`, `Flight::Motor`).
 - Flight-control state machine with multiple modes.
-- Virtual sensor stack (IMU, altimeter, battery).
+- **Estimator-driven control**: Flight controller uses fused sensor state (no ground-truth shortcuts).
+- Virtual sensor stack (IMU, altimeter, battery) with complementary filter attitude estimation.
 - Config-driven behavior via TOML-like files.
 - GUI renderer (SFML) and headless simulation mode.
 - Telemetry/HUD formatting plus status-line output.
 - Unit-style tests for key subsystems.
+- **STM32 HAL scaffolds**: Motor output (PWM/DShot) and RC input (SBUS/CRSF) drivers for embedded targets.
 
 ## Autonomy Status
 
 - The codebase already includes autonomy-facing behavior in simulation, including mode transitions, altitude-hold, return-home guidance, and mission-mode scaffolding.
 - This is best described as an autonomy prototype and research platform, not a finished production autopilot.
-- Remaining autonomy gaps include full state estimation, GPS/mission navigation, robust failure handling, and embedded hardware I/O.
+- Remaining autonomy gaps include full state estimation (EKF), GPS/mission navigation, robust failure handling, and complete embedded hardware I/O integration.
 
 ## Project Layout
 
 ```text
 AeroCore/
-├── include/        # Public headers by subsystem
-├── src/            # Implementations + main entry point
-├── config/         # Example simulation configs
-├── tests/          # Unit-style executable tests
-├── docs/           # Architecture, build, config, testing docs
-├── assets/         # Rendering assets
-├── logs/           # Runtime log output
+├── include/                 # Public headers by subsystem
+│   ├── Core/              # Estimator and core algorithms
+│   ├── Flight/            # Flight controller, drone, motors, PID
+│   ├── HAL/               # Hardware abstraction interfaces
+│   ├── Math/              # Vector math, quaternions
+│   ├── Physics/           # Physics engine
+│   ├── Rendering/         # SFML visualization
+│   ├── Sensors/           # IMU, altimeter, battery
+│   ├── Simulation/        # Simulation engine, telemetry
+│   ├── Utilities/         # Config, logging, CLI args
+│   └── platforms/         # Platform-specific HAL implementations
+│       ├── sim/          # Simulation backends
+│       └── stm32/        # STM32 HAL scaffolds
+├── src/                    # Implementations + main entry point
+│   ├── Core/
+│   ├── Flight/
+│   ├── platforms/
+│   │   ├── sim/
+│   │   └── stm32/
+│   └── main.cpp
+├── firmware/               # Embedded firmware entry points
+│   └── stm32_main.cpp
+├── config/                 # Example simulation configs
+├── tests/                  # Unit-style executable tests
+├── docs/                   # Architecture, build, config, testing docs
+├── assets/                 # Rendering assets
+├── logs/                   # Runtime log output
 └── CMakeLists.txt
 ```
 
@@ -90,7 +112,7 @@ Headless options:
 - `--duration <seconds>`: max simulation time (default `60`).
 - `--status-rate <hz>`: console status refresh rate (default `5`).
 - `--debug-headless`: enable additional early debug output.
-- `--no-perfect-state`: disable perfect-state simulator state injection and force the estimator to run on noisy simulated sensor data.
+- `--no-perfect-state`: enable perfect-state simulator state injection (default is estimator-driven mode).
 
 Use a specific config:
 
@@ -127,6 +149,7 @@ Current tests:
 - `test_cli_args`: command-line parsing and validation.
 - `test_flight_mode`: mode state transitions and requirement checks.
 - `test_physics_engine`: RK4 integration and environment model.
+- `test_physics_airdrag`: aerodynamic drag model validation.
 - `test_simulation_engine`: full integration of FC, physics, and telemetry.
 - `test_estimator`: state estimation and sensor bias learning.
 - `test_pre_arm`: arming safety checks (throttle, level, sensors).

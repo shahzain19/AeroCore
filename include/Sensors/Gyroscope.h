@@ -54,7 +54,9 @@ public:
     void update(double dt, const Math::Vector3d& true_omega_body);
 
     // Override — not used for 3-D
-    void update(double dt, double /*true_value*/) override {}
+    void update(double dt, double /*true_value*/) override {
+        (void)dt;
+    }
 
     // ----------------------------------------------------------
     //  Accessors

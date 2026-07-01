@@ -74,6 +74,7 @@ list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/SimulationEngine\\.cpp$")
 list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/platforms/sim/SimIMU\\.cpp$")
 list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/platforms/sim/SimBarometer\\.cpp$")
 list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/platforms/sim/SimRCInput\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/platforms/stm32/.*\\.cpp$")
 
 # ============================================================
 #  Library targets
@@ -117,6 +118,40 @@ if(AEROCORE_BUILD_SIM)
     install(TARGETS AeroCoreSim ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(DIRECTORY config/ DESTINATION ${CMAKE_INSTALL_DATADIR}/aerocore/config)
+endif()
+
+# ============================================================
+#  STM32 firmware target
+# ============================================================
+if(AEROCORE_TARGET STREQUAL "stm32")
+    # STM32-specific sources
+    set(STM32_SOURCES
+        src/platforms/stm32/STM32MotorOutput.cpp
+        src/platforms/stm32/STM32RCInput.cpp
+    )
+
+    # Create STM32 firmware library
+    add_library(AeroCoreSTM32 STATIC ${CORE_SOURCES} ${STM32_SOURCES})
+    target_include_directories(AeroCoreSTM32 PUBLIC
+        ${PROJECT_SOURCE_DIR}/include
+    )
+    target_link_libraries(AeroCoreSTM32 PUBLIC Eigen3::Eigen)
+    target_compile_definitions(AeroCoreSTM32 PRIVATE AEROCORE_BUILD_STM32)
+
+    # Create STM32 firmware executable
+    add_executable(AeroCoreSTM32Firmware firmware/stm32_main.cpp)
+    target_link_libraries(AeroCoreSTM32Firmware PRIVATE AeroCoreSTM32)
+
+    # Note: STM32 builds require additional toolchain setup
+    # (arm-none-eabi-gcc, STM32 HAL, etc.)
+    # This is a scaffold - actual STM32 builds need:
+    # - Cross-compilation toolchain
+    # - STM32 HAL/LL drivers
+    # - Linker script for memory layout
+    # - OpenOCD/ST-Link for flashing
+
+    message(STATUS "STM32 firmware target configured (scaffold)")
+    message(STATUS "Note: STM32 builds require ARM toolchain and STM32 HAL")
 endif()
 
 # ============================================================

@@ -13,7 +13,7 @@ int main() {
     auto& fc = engine.flightController();
 
     AeroCore::Tests::expectTrue(!engine.perfectState(),
-                                "simulator defaults to estimator-driven state");
+                                "simulator defaults to estimator-driven state (no perfect state injection)");
 
     for (int i = 0; i < 250; ++i) engine.stepPhysics();
 

@@ -56,7 +56,9 @@ public:
     void update(double dt, const Math::Vector3d& true_accel_body);
 
     // Override: unused for 3-D sensors — call the 3-D overload instead.
-    void update(double dt, double /*true_value*/) override {}
+    void update(double dt, double /*true_value*/) override {
+        (void)dt;
+    }
 
     // ----------------------------------------------------------
     //  Accessors

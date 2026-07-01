@@ -62,7 +62,7 @@ SimulationEngine::SimulationEngine(const std::string& config_hint)
         const auto v = config_.get<std::string>("simulation", "perfect_state");
         perfect_state_ = (v == "true" || v == "1");
     } catch (...) {
-        perfect_state_ = true;
+        perfect_state_ = false;  // Default to estimator-driven mode
     }
 
     flight_controller_ = std::make_unique<Flight::FlightController>(

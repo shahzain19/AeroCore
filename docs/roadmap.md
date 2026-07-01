@@ -2,25 +2,33 @@
 
 AeroCore is already a capable simulation-first flight-controller research platform. The next step is to turn that foundation into a more realistic and portable control stack by tightening the gap between simulation and real hardware.
 
-## Priority 1 — Replace simulation shortcuts with real estimator flow
+## Priority 1 — Replace simulation shortcuts with real estimator flow ✅ COMPLETED
 
 Goal: make the controller consume estimator state instead of relying on perfect state from the simulator.
 
-- Move the flight controller to a dedicated estimator-driven state pipeline.
-- Keep the current simulator as a testbed, but make the default path use noisy sensor data and fused attitude/altitude estimates.
-- Add regression tests around estimator behavior, bias handling, and mode transitions.
+- ✅ Move the flight controller to a dedicated estimator-driven state pipeline.
+- ✅ Keep the current simulator as a testbed, but make the default path use noisy sensor data and fused attitude/altitude estimates.
+- ✅ Add regression tests around estimator behavior, bias handling, and mode transitions.
 
 Why first: this is the biggest architectural gap between AeroCore as a simulator and AeroCore as a real flight controller.
 
-## Priority 2 — Add a real hardware I/O layer
+**Status**: Completed - Flight controller now uses estimator state exclusively, simulation defaults to estimator-driven mode.
+
+## Priority 2 — Add a real hardware I/O layer 🚧 IN PROGRESS
 
 Goal: support RC input and motor-output backends that match what a real board would need.
 
-- Add a stable HAL interface for RC input, motor outputs, and timing.
-- Implement a first hardware backend for a common board target such as STM32.
-- Support at least one low-level motor protocol (PWM or DShot) and one RC input format (SBUS or CRSF).
+- ✅ Add a stable HAL interface for RC input, motor outputs, and timing.
+- ✅ Implement STM32 HAL scaffolds for motor output (PWM/DShot) and RC input (SBUS/CRSF).
+- ✅ Add STM32 platform configuration system with board-specific pin mappings.
+- ✅ Create CMake build target for STM32 firmware scaffold.
+- ⏳ Complete STM32 HAL library integration (GPIO/Timer/UART peripheral initialization).
+- ⏳ Implement interrupt handlers for RC input and control loop timing.
+- ⏳ Set up ARM toolchain and STM32 HAL/LL drivers for actual firmware builds.
 
 Why second: the controller core can be validated in simulation, but first-flight confidence requires real I/O loops.
+
+**Status**: HAL scaffolds implemented, hardware integration pending STM32 HAL library setup.
 
 ## Priority 3 — Harden safety and failsafe behavior
 
