@@ -40,11 +40,23 @@ int main() {
         (void)args;
     }
 
+    {
+        std::string err;
+        const char* argv[] = {"AeroCore", "--headless", "--no-perfect-state"};
+        const auto args = CliArgs::parse(3, const_cast<char**>(argv), err);
+        AeroCore::Tests::expectTrue(args.headless, "parses --headless");
+        AeroCore::Tests::expectTrue(!args.perfect_state,
+                                    "parses --no-perfect-state");
+        AeroCore::Tests::expectTrue(err.empty(), "valid args produce no error");
+    }
+
     const auto help = CliArgs::helpText();
     AeroCore::Tests::expectTrue(help.find("--headless") != std::string::npos,
                                 "help mentions --headless");
     AeroCore::Tests::expectTrue(help.find("--help") != std::string::npos,
                                 "help mentions --help");
+    AeroCore::Tests::expectTrue(help.find("--no-perfect-state") != std::string::npos,
+                                "help mentions --no-perfect-state");
 
     return AeroCore::Tests::finish();
 }

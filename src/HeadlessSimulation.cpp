@@ -23,6 +23,7 @@ HeadlessSimulation::HeadlessSimulation(const std::string& config_hint,
     : engine_(config_hint)
     , args_(args)
 {
+    engine_.setPerfectState(args.perfect_state);
     Utilities::Logger::getInstance().info("Headless simulation started");
 }
 

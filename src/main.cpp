@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
             Simulation::HeadlessSimulation sim(args.config_path, args);
             return sim.run();
         }
-        Simulation::HeadedSimulation sim(args.config_path);
+        Simulation::HeadedSimulation sim(args.config_path, args);
         return sim.run();
     } catch (const std::exception& e) {
         Utilities::Logger::getInstance().error(std::string("Fatal: ") + e.what());

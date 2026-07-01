@@ -64,6 +64,8 @@ public:
     Platform::Sim::SimRCInput& rcInput();
     const Platform::Sim::SimRCInput& rcInput() const;
 
+    void setPerfectState(bool enabled);
+
 private:
     std::string config_path_;
     Utilities::Config config_;

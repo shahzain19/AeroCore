@@ -15,10 +15,12 @@
 namespace AeroCore {
 namespace Simulation {
 
-HeadedSimulation::HeadedSimulation(const std::string& config_hint)
+HeadedSimulation::HeadedSimulation(const std::string& config_hint,
+                                     const Utilities::CliArgs& args)
     : engine_(config_hint)
     , renderer_(std::make_unique<Rendering::Renderer>(1440, 810, "AeroCore v2.0"))
 {
+    engine_.setPerfectState(args.perfect_state);
     Utilities::Logger::getInstance().info("Headed simulation started (1440×810)");
 }
 

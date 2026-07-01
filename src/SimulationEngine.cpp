@@ -217,5 +217,9 @@ const Platform::Sim::SimRCInput& SimulationEngine::rcInput() const {
     return *sim_rc_;
 }
 
+void SimulationEngine::setPerfectState(bool enabled) {
+    perfect_state_ = enabled;
+}
+
 } // namespace Simulation
 } // namespace AeroCore

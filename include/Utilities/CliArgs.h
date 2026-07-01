@@ -20,6 +20,7 @@ struct CliArgs {
     bool        show_help              = false;
     bool        headless               = false;
     bool        headless_debug         = false;
+    bool        perfect_state          = true;
     std::string config_path            = "config/simulation.toml";
     double      max_sim_time           = 60.0;
     double      headless_status_rate_hz = 5.0;

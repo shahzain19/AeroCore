@@ -14,6 +14,7 @@
 #include "Simulation/SimulationEngine.h"
 #include "Rendering/Renderer.h"
 #include "Simulation/TelemetryManager.h"
+#include "Utilities/CliArgs.h"
 
 #include <memory>
 
@@ -25,7 +26,8 @@ namespace Simulation {
  */
 class HeadedSimulation {
 public:
-    explicit HeadedSimulation(const std::string& config_hint);
+    HeadedSimulation(const std::string& config_hint,
+                     const Utilities::CliArgs& args = Utilities::CliArgs());
 
     /** Run until the window is closed. Returns process exit code. */
     int run();

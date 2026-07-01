@@ -28,6 +28,7 @@ std::string CliArgs::helpText() {
         << "      --duration <sec>    Headless max simulation time (default: 60)\n"
         << "      --status-rate <hz>  Headless status-line refresh rate (default: 5)\n"
         << "      --debug-headless    Extra debug output during headless runs\n"
+        << "      --no-perfect-state   Disable perfect-state simulator state injection\n"
         << "\n"
         << "Arguments:\n"
         << "  config_file             Path to simulation config (default: config/simulation.toml)\n"
@@ -80,6 +81,10 @@ CliArgs CliArgs::parse(int argc, char* argv[], std::string& error_out) {
                 return args;
             }
             args.headless_status_rate_hz = std::max(0.1, std::atof(argv[++i]));
+            continue;
+        }
+        if (arg == "--no-perfect-state") {
+            args.perfect_state = false;
             continue;
         }
         if (!arg.empty() && arg.front() == '-') {
