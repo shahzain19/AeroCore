@@ -155,10 +155,13 @@ Current tests:
 - `test_pre_arm`: arming safety checks (throttle, level, sensors).
 - `test_imu_fusion`: IMU attitude filtering and fusion.
 - `test_motor_output`: HAL motor output forwarding and disarm command routing.
+- `test_gps_navigation`: GPS feedback availability and estimator position/velocity updates.
+- `test_rc_failsafe`: RC-link loss transitions the controller into a safe fail-safe state.
 
 ## Documentation
 
 - `docs/roadmap.md` — concise next-feature plan and execution order
+- `docs/feature-list.md` — current feature inventory and planned next milestones
 - `docs/sim-to-production.md` — sim → firmware migration path and current status
 - `docs/embedded-installation.md` — board support, build targets, and hardware porting notes
 - `docs/architecture.md`

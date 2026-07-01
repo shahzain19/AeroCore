@@ -624,6 +624,20 @@ void FlightController::mixMotors(double throttle, double roll,
 // ============================================================
 
 bool FlightController::checkFailsafe() {
+    if (rc_input_) {
+        const auto ch = rc_input_->read();
+        const bool rc_lost = !rc_input_->healthy() ||
+            ch.link_status == HAL::RCLinkStatus::Lost ||
+            ch.link_status == HAL::RCLinkStatus::Stale ||
+            rc_input_->msSinceLastFrame() > 500;
+        if (rc_lost && mode_ != FlightMode::FAILSAFE && mode_ != FlightMode::DISARMED) {
+            Utilities::Logger::getInstance().warning("RC link lost — entering FAILSAFE");
+            logModeTransition(mode_, FlightMode::FAILSAFE);
+            mode_ = FlightMode::FAILSAFE;
+            return false;
+        }
+    }
+
     // Low battery failsafe
     if (battery_sensor_->getVoltage() > 1.0 &&
         drone_->getBatteryPercentage() < 5.0 &&

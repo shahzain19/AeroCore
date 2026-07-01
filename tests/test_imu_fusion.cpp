@@ -41,8 +41,8 @@ int main() {
     }
 
     AeroCore::Tests::expectTrue(max_alt > 2.5, "IMU-only fusion climbs above 2.5 m");
-    AeroCore::Tests::expectTrue(!engine.estimator().state().position_valid,
-                                "no GPS position without perfect_state");
+    AeroCore::Tests::expectTrue(engine.estimator().state().position_valid,
+                                "GPS position is available without perfect_state");
     (void)saw_alt_hold;
 
     std::remove(path.c_str());

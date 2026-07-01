@@ -14,12 +14,14 @@ This document tracks what AeroCore currently implements, what is partially imple
   - FSM with arming, takeoff, and altitude-hold transitions.
   - PID-based control components (`Flight::PIDController`).
   - Mode request handling for multiple flight modes.
+  - RC-link loss fail-safe handling that enters FAILSAFE and descends safely when the receiver link is lost.
   - **Estimator-driven control**: Flight controller now uses estimator state exclusively, no ground-truth shortcuts.
 - **Autonomy and guidance**
   - Basic autonomous behaviors such as altitude hold, return-home, and mission-mode scaffolding are implemented in simulation.
   - The system can make mode-based decisions and close the loop on state feedback in the simulator.
 - **Sensor simulation**
   - IMU (accelerometer + gyroscope), altimeter, battery sensor.
+  - Simulated GPS feedback for estimator-driven position and velocity updates.
   - Sensor values are propagated into telemetry each simulation step.
 - **State estimation**
   - Complementary filter attitude estimation (roll/pitch from IMU fusion).
@@ -53,6 +55,8 @@ This document tracks what AeroCore currently implements, what is partially imple
   - `test_flight_mode`
   - `test_physics_engine`
   - `test_simulation_engine`
+- `test_gps_navigation`
+- `test_rc_failsafe`
   - `test_motor_output` (HAL motor output forwarding)
   - `test_estimator`
   - `test_pre_arm`

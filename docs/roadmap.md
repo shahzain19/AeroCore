@@ -30,23 +30,24 @@ Why second: the controller core can be validated in simulation, but first-flight
 
 **Status**: HAL scaffolds implemented, hardware integration pending STM32 HAL library setup.
 
-## Priority 3 — Harden safety and failsafe behavior
+## Priority 3 — Harden safety and failsafe behavior ✅ PARTIALLY IMPLEMENTED
 
 Goal: make the system safe enough for real-world bench testing.
 
-- Tighten pre-arm checks with explicit diagnostics.
-- Add RC-loss, low-battery, and IMU health failsafe transitions.
-- Improve logging and blackbox-style telemetry for tuning and debugging.
+- ✅ Added RC-link loss detection that transitions the flight controller into FAILSAFE.
+- ✅ Low-battery fail-safe transitions remain active.
+- ⏳ Tighten pre-arm diagnostics and add richer fail-safe reason reporting.
+- ⏳ Improve logging and blackbox-style telemetry for tuning and debugging.
 
 Why third: safety is the gating item before any bench or tethered flight work.
 
-## Priority 4 — Add GPS and navigation primitives
+## Priority 4 — Add GPS and navigation primitives ✅ PARTIALLY IMPLEMENTED
 
 Goal: move from manual altitude/attitude control to true position-aware modes.
 
-- Introduce a simple GPS sensor model and a basic state estimator path.
-- Implement position-hold and return-to-home behavior with real navigation state.
-- Keep the scope narrow at first: single-airframe, low-speed, indoor/outdoor safe operation.
+- ✅ Added a basic simulated GPS backend that publishes position/velocity samples to the estimator.
+- ✅ Position-hold and return-to-home logic now receive estimator-backed navigation state in simulation.
+- ⏳ Expand to a richer GPS noise model and mission-level navigation behaviors.
 
 Why fourth: this unlocks meaningful autonomy, but it depends on the estimator work above.
 

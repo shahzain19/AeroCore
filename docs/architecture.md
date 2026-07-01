@@ -52,6 +52,13 @@ Headless mode runs the same simulation stack as the GUI path, but:
 - automatically arms and starts takeoff,
 - prints a compact status line at a configurable rate.
 
+## Navigation and safety additions
+
+Two recent additions strengthen the sim-to-hardware story:
+
+- A simulated GPS backend feeds estimator-backed position and velocity updates into the flight control stack.
+- RC-link loss detection causes the controller to enter FAILSAFE and transition to a safe descent path.
+
 ## Planned next features
 
 The next major milestones are focused on closing the gap between the simulator and a real flight controller:

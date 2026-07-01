@@ -62,6 +62,7 @@ set(SIM_ONLY_SOURCES
     src/SimulationEngine.cpp
     src/platforms/sim/SimIMU.cpp
     src/platforms/sim/SimBarometer.cpp
+    src/platforms/sim/SimGPS.cpp
     src/platforms/sim/SimRCInput.cpp
 )
 
@@ -203,5 +204,7 @@ if(AEROCORE_BUILD_TESTS)
         aerocore_add_test(test_simulation_engine EXTRA_LIBS "AeroCoreSim")
         aerocore_add_test(test_pre_arm EXTRA_LIBS "AeroCoreSim")
         aerocore_add_test(test_imu_fusion EXTRA_LIBS "AeroCoreSim")
+        aerocore_add_test(test_gps_navigation EXTRA_LIBS "AeroCoreSim")
+        aerocore_add_test(test_rc_failsafe EXTRA_LIBS "AeroCoreSim")
     endif()
 endif()

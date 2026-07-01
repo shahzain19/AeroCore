@@ -23,6 +23,7 @@
 #include "Core/ComplementaryEstimator.h"
 #include "platforms/sim/SimIMU.h"
 #include "platforms/sim/SimBarometer.h"
+#include "platforms/sim/SimGPS.h"
 #include "platforms/sim/SimRCInput.h"
 
 #include <memory>
@@ -79,6 +80,7 @@ private:
     std::unique_ptr<Core::ComplementaryEstimator>  estimator_;
     std::unique_ptr<Platform::Sim::SimIMU>       sim_imu_;
     std::unique_ptr<Platform::Sim::SimBarometer>   sim_baro_;
+    std::unique_ptr<Platform::Sim::SimGPS>         sim_gps_;
     std::unique_ptr<Platform::Sim::SimRCInput>     sim_rc_;
     Physics::PhysicsEngine                         physics_;
 

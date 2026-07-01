@@ -10,6 +10,7 @@
 #include "Core/ComplementaryEstimator.h"
 #include "platforms/sim/SimIMU.h"
 #include "platforms/sim/SimBarometer.h"
+#include "platforms/sim/SimGPS.h"
 #include "Utilities/Logger.h"
 
 #include <fstream>
@@ -56,6 +57,7 @@ SimulationEngine::SimulationEngine(const std::string& config_hint)
     estimator_ = std::make_unique<Core::ComplementaryEstimator>(config_);
     sim_imu_   = std::make_unique<Platform::Sim::SimIMU>(imu_);
     sim_baro_  = std::make_unique<Platform::Sim::SimBarometer>(altimeter_);
+    sim_gps_   = std::make_unique<Platform::Sim::SimGPS>(drone_);
     sim_rc_    = std::make_unique<Platform::Sim::SimRCInput>();
 
     try {
@@ -111,6 +113,7 @@ void SimulationEngine::stepPhysics() {
         estimator_->clearPerfectNavigation();
     }
     estimator_->correctBaro(sim_baro_->read());
+    estimator_->correctGPS(sim_gps_->read());
 
     flight_controller_->update(physics_dt_);
     drone_->update(physics_dt_, rho);
