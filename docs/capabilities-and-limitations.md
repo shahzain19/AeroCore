@@ -29,7 +29,7 @@ This document tracks what AeroCore currently implements, what is partially imple
   - Quoted string handling and typed getters.
 - **CLI and runtime controls**
   - `--help` / `-h` for usage text.
-  - `--headless`, `--duration <seconds>`, `--status-rate <hz>`, `--debug-headless`.
+  - `--headless`, `--duration <seconds>`, `--status-rate <hz>`, `--debug-headless`, `--no-perfect-state`.
   - Unknown options produce explicit errors (no silent ignore).
 - **Modular simulation runners**
   - `Simulation::SimulationEngine` — shared physics/sensor/FC stack.
@@ -61,7 +61,7 @@ This document tracks what AeroCore currently implements, what is partially imple
 - **Embedded firmware targets**
   - HAL interfaces exist (`include/HAL/`); STM32/ESP32/Linux SBC drivers and firmware loops are not complete. See `docs/embedded-installation.md`.
 - **Ground-truth shortcuts in flight controller**
-  - With `simulation.perfect_state = true` (default), attitude and position come from the estimator fed by physics truth for POS_HOLD/RTH. Set `perfect_state = false` to exercise noisy IMU-only fusion.
+  - With `simulation.perfect_state = true` (default), attitude and position come from the estimator fed by physics truth for POS_HOLD/RTH. Set `simulation.perfect_state = false` or run with `--no-perfect-state` to exercise noisy IMU-only fusion.
   - Full GPS sensor model not implemented; position modes still rely on perfect-state injection in sim.
 - **Full autonomy stack**
   - The repo has autonomy primitives and basic autonomous scenarios, but not a complete production-grade autonomy stack.

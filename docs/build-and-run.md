@@ -48,6 +48,7 @@ Useful options:
 - `--duration <seconds>`: stop after configured simulation time (default `60`).
 - `--status-rate <hz>`: status line print rate in headless mode (default `5`).
 - `--debug-headless`: enable early detailed debug prints.
+- `--no-perfect-state`: disable perfect-state simulator state injection and exercise the estimator with noisy simulated sensors.
 
 You can also pass a config file path:
 

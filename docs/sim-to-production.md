@@ -69,6 +69,14 @@ cmake --build . -j"$(nproc)"
 - board-specific pin maps and flash/boot instructions
 - runtime CLI/telemetry on MCU targets
 
+## Simulation validation tools
+
+AeroCore supports a headless regression and validation mode where the simulator can be forced to run without perfect-state injection. This is useful for testing estimator resilience before moving to real hardware.
+
+```bash
+./AeroCore --headless --no-perfect-state
+```
+
 ## Recommended next documentation updates
 
 - keep `docs/embedded-installation.md` synchronized with the actual available firmware ports

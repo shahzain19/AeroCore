@@ -90,6 +90,7 @@ Headless options:
 - `--duration <seconds>`: max simulation time (default `60`).
 - `--status-rate <hz>`: console status refresh rate (default `5`).
 - `--debug-headless`: enable additional early debug output.
+- `--no-perfect-state`: disable perfect-state simulator state injection and force the estimator to run on noisy simulated sensor data.
 
 Use a specific config:
 

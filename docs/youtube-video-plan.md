@@ -153,6 +153,7 @@ Show the system being stressed:
 - change controller gains
 - inject noise
 - alter conditions
+- disable perfect-state injection with `--no-perfect-state`
 - push to failure
 
 ### Why this matters
