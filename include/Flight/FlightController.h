@@ -54,12 +54,14 @@
 #include "Flight/Drone.h"
 #include "Flight/PIDController.h"
 #include "HAL/IStateEstimator.h"
+#include "HAL/IRCInput.h"
 #include "Sensors/IMU.h"
 #include "Sensors/Altimeter.h"
 #include "Sensors/BatterySensor.h"
 #include "Utilities/Config.h"
 #include "Utilities/Logger.h"
 #include <memory>
+#include <string>
 
 namespace AeroCore {
 namespace Flight {
@@ -169,6 +171,15 @@ public:
      */
     void setPilotInput(const PilotInput& input);
 
+    /// Bind RC receiver; pilot sticks synced each update() when set.
+    void setRCInput(HAL::IRCInput* rc_input);
+
+    /// True when arming preconditions are satisfied.
+    bool canArm() const;
+
+    /// Human-readable reason when canArm() is false (empty if OK).
+    std::string preArmStatus() const;
+
     // ----------------------------------------------------------
     //  Getters
     // ----------------------------------------------------------
@@ -195,6 +206,7 @@ private:
     std::shared_ptr<Sensors::Altimeter>    altimeter_;
     std::shared_ptr<Sensors::BatterySensor> battery_sensor_;
     HAL::IStateEstimator&                  estimator_;
+    HAL::IRCInput*                         rc_input_{nullptr};
 
     // PIDs — altitude cascade
     std::unique_ptr<PIDController> pid_alt_;      ///< Altitude → throttle
@@ -229,6 +241,7 @@ private:
     double max_yaw_rate_;     ///< Max yaw rate [rad/s]
     double max_tilt_angle_;   ///< Max combined tilt [rad] (safety)
     double hover_throttle_;   ///< Throttle needed to hover at 1g [0–1]
+    double max_arm_angle_;    ///< Max roll/pitch for arming [rad]
 
     // ----------------------------------------------------------
     //  Mode-specific update methods
@@ -292,7 +305,10 @@ private:
      * @param hover_floor   When true, floor is max(min_throttle, 70% of hover).
      */
     double computeAltitudeThrottle(double dt, double setpoint_alt,
-                                   double min_throttle, bool hover_floor);
+                                   double min_throttle, bool hover_floor,
+                                   bool climb_only = false);
+
+    void syncPilotFromRC();
 };
 
 } // namespace Flight

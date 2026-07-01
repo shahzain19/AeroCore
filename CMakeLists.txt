@@ -9,7 +9,7 @@ project(AeroCore
     LANGUAGES CXX
 )
 
-# sim = desktop simulator (default); stm32/linux-sbc/esp32 = firmware (scaffold)
+# sim = desktop simulator (default); stm32/linux-sbc/esp32 = firmware scaffolds
 set(AEROCORE_TARGET "sim" CACHE STRING "Build target: sim, stm32, linux-sbc, esp32")
 
 # ============================================================
@@ -27,66 +27,93 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # ============================================================
+#  Build configuration
+# ============================================================
+set(AEROCORE_BUILD_SIM OFF)
+if(AEROCORE_TARGET STREQUAL "sim")
+    set(AEROCORE_BUILD_SIM ON)
+endif()
+
+# ============================================================
 #  Dependencies
 # ============================================================
 find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-find_package(SFML COMPONENTS Graphics Window System REQUIRED)
+if(AEROCORE_BUILD_SIM)
+    find_package(SFML COMPONENTS Graphics Window System REQUIRED)
+endif()
 
 # ============================================================
-#  Sources
+#  Source layout
 # ============================================================
-file(GLOB_RECURSE SOURCES "${PROJECT_SOURCE_DIR}/src/*.cpp")
+file(GLOB_RECURSE ALL_SRC_CPP
+    "${PROJECT_SOURCE_DIR}/src/*.cpp"
+)
+
+set(SIM_ONLY_SOURCES
+    src/HeadedSimulation.cpp
+    src/HeadlessSimulation.cpp
+    src/Renderer.cpp
+    src/SimulationEngine.cpp
+    src/platforms/sim/SimIMU.cpp
+    src/platforms/sim/SimBarometer.cpp
+    src/platforms/sim/SimRCInput.cpp
+)
+
+set(CORE_SOURCES ${ALL_SRC_CPP})
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/HeadedSimulation\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/HeadlessSimulation\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/Renderer\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/SimulationEngine\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/platforms/sim/SimIMU\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/platforms/sim/SimBarometer\\.cpp$")
+list(FILTER CORE_SOURCES EXCLUDE REGEX ".*/platforms/sim/SimRCInput\\.cpp$")
 
 # ============================================================
-#  Executable
+#  Library targets
 # ============================================================
-add_executable(${PROJECT_NAME} ${SOURCES})
-
-target_include_directories(${PROJECT_NAME} PRIVATE
+add_library(AeroCoreCore STATIC ${CORE_SOURCES})
+target_include_directories(AeroCoreCore PUBLIC
     ${PROJECT_SOURCE_DIR}/include
 )
+target_link_libraries(AeroCoreCore PUBLIC Eigen3::Eigen)
+target_compile_definitions(AeroCoreCore PRIVATE AEROCORE_BUILD_CORE)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Eigen3::Eigen
-    sfml-graphics
-    sfml-window
-    sfml-system
-)
+if(AEROCORE_BUILD_SIM)
+    add_library(AeroCoreSim STATIC ${SIM_ONLY_SOURCES})
+    target_include_directories(AeroCoreSim PUBLIC
+        ${PROJECT_SOURCE_DIR}/include
+    )
+    target_link_libraries(AeroCoreSim PUBLIC AeroCoreCore
+        sfml-graphics
+        sfml-window
+        sfml-system
+    )
+
+    add_executable(${PROJECT_NAME} src/main.cpp)
+    target_link_libraries(${PROJECT_NAME} PRIVATE AeroCoreSim)
+
+    # Copy config to build directory
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/config"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/config"
+        COMMENT "Copying config files to build directory"
+    )
+
+    install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+    install(DIRECTORY config/ DESTINATION share/aerocore/config)
+endif()
 
 # ============================================================
 #  Compiler flags
 # ============================================================
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        -Wall -Wextra -Wpedantic
-        $<$<CONFIG:Release>:-O3 -DNDEBUG -march=native>
-        $<$<CONFIG:Debug>:-g -O0 -fsanitize=address,undefined>
-    )
-    target_link_options(${PROJECT_NAME} PRIVATE
-        $<$<CONFIG:Debug>:-fsanitize=address,undefined>
-    )
+    add_compile_options(-Wall -Wextra -Wpedantic)
+    add_link_options($<$<CONFIG:Debug>:-fsanitize=address,undefined>)
 elseif(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        /W4
-        $<$<CONFIG:Release>:/O2>
-    )
+    add_compile_options(/W4)
 endif()
-
-# ============================================================
-#  Copy config to build directory
-# ============================================================
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${PROJECT_SOURCE_DIR}/config"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/config"
-    COMMENT "Copying config files to build directory"
-)
-
-# ============================================================
-#  Install
-# ============================================================
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
-install(DIRECTORY config/ DESTINATION share/aerocore/config)
 
 # ============================================================
 #  Tests
@@ -98,56 +125,32 @@ if(AEROCORE_BUILD_TESTS)
     function(aerocore_add_test TEST_NAME)
         set(options "")
         set(oneValueArgs "")
-        set(multiValueArgs EXTRA_SOURCES)
+        set(multiValueArgs EXTRA_LIBS)
         cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-        set(SOURCES
-            tests/${TEST_NAME}.cpp
-            src/Config.cpp
-            src/TelemetryManager.cpp
-        )
-        if(ARG_EXTRA_SOURCES)
-            list(APPEND SOURCES ${ARG_EXTRA_SOURCES})
-        endif()
-
-        add_executable(${TEST_NAME} ${SOURCES})
+        add_executable(${TEST_NAME} tests/${TEST_NAME}.cpp)
         target_include_directories(${TEST_NAME} PRIVATE
             ${PROJECT_SOURCE_DIR}/include
             ${PROJECT_SOURCE_DIR}/tests
         )
-        target_link_libraries(${TEST_NAME} PRIVATE
-            Eigen3::Eigen
-        )
+        target_link_libraries(${TEST_NAME} PRIVATE Eigen3::Eigen AeroCoreCore)
+        if(ARG_EXTRA_LIBS)
+            target_link_libraries(${TEST_NAME} PRIVATE ${ARG_EXTRA_LIBS})
+        endif()
         add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
     endfunction()
 
-    aerocore_add_test(test_pid_controller EXTRA_SOURCES src/PIDController.cpp)
+    aerocore_add_test(test_pid_controller)
     aerocore_add_test(test_config)
     aerocore_add_test(test_telemetry_manager)
-    aerocore_add_test(test_cli_args EXTRA_SOURCES src/CliArgs.cpp)
+    aerocore_add_test(test_cli_args)
     aerocore_add_test(test_flight_mode)
-    aerocore_add_test(test_physics_engine EXTRA_SOURCES src/PhysicsEngine.cpp)
-    aerocore_add_test(test_simulation_engine EXTRA_SOURCES
-        src/SimulationEngine.cpp
-        src/PhysicsEngine.cpp
-        src/Drone.cpp
-        src/Motor.cpp
-        src/FlightController.cpp
-        src/PIDController.cpp
-        src/IMU.cpp
-        src/Accelerometer.cpp
-        src/Gyroscope.cpp
-        src/Sensor.cpp
-        src/Altimeter.cpp
-        src/BatterySensor.cpp
-        src/Logger.cpp
-        src/Core/ComplementaryEstimator.cpp
-        src/platforms/sim/SimIMU.cpp
-        src/platforms/sim/SimBarometer.cpp
-        src/HAL/Types.cpp
-    )
-    aerocore_add_test(test_estimator EXTRA_SOURCES
-        src/Core/ComplementaryEstimator.cpp
-        src/HAL/Types.cpp
-    )
+    aerocore_add_test(test_physics_engine)
+    aerocore_add_test(test_estimator)
+
+    if(AEROCORE_BUILD_SIM)
+        aerocore_add_test(test_simulation_engine EXTRA_LIBS "AeroCoreSim")
+        aerocore_add_test(test_pre_arm EXTRA_LIBS "AeroCoreSim")
+        aerocore_add_test(test_imu_fusion EXTRA_LIBS "AeroCoreSim")
+    endif()
 endif()

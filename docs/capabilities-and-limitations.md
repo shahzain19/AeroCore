@@ -58,7 +58,8 @@ This document tracks what AeroCore currently implements, what is partially imple
 - **Embedded firmware targets**
   - HAL interfaces exist (`include/HAL/`); STM32/ESP32/Linux SBC drivers and firmware loops are not complete. See `docs/embedded-installation.md`.
 - **Ground-truth shortcuts in flight controller**
-  - Attitude from physics euler (not IMU fusion); position hold uses simulator position, not GPS.
+  - With `simulation.perfect_state = true` (default), attitude and position come from the estimator fed by physics truth for POS_HOLD/RTH. Set `perfect_state = false` to exercise noisy IMU-only fusion.
+  - Full GPS sensor model not implemented; position modes still rely on perfect-state injection in sim.
 - **Full mission navigation stack**
   - Waypoint path management and mission execution logic are not complete.
 - **High-fidelity environment/world model**
@@ -75,4 +76,5 @@ This document tracks what AeroCore currently implements, what is partially imple
 ## Current Practical Expectations
 
 - Use AeroCore for **control-loop experimentation, mode-transition debugging, and simulation prototyping**.
+- The repo now supports a simulator target plus firmware scaffold targets for `stm32`, `linux-sbc`, and `esp32`.
 - Do not treat current outputs as a **certified autopilot or high-fidelity aerodynamics benchmark**.

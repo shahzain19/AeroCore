@@ -22,6 +22,32 @@ void ComplementaryEstimator::reset() {
     perfect_nav_ = false;
 }
 
+void ComplementaryEstimator::updateQuaternionFromEuler() {
+    const double roll  = state_.euler_rpy.x();
+    const double pitch = state_.euler_rpy.y();
+    const double yaw   = state_.euler_rpy.z();
+    state_.attitude =
+        Math::AngleAxisd(yaw,   Math::Vector3d::UnitZ()) *
+        Math::AngleAxisd(pitch, Math::Vector3d::UnitY()) *
+        Math::AngleAxisd(roll,  Math::Vector3d::UnitX());
+    state_.attitude.normalize();
+    state_.attitude_valid = true;
+}
+
+void ComplementaryEstimator::setAttitudeRollPitch(double roll_rad, double pitch_rad) {
+    state_.euler_rpy.x() = Math::wrapAngle(roll_rad);
+    state_.euler_rpy.y() = Math::wrapAngle(pitch_rad);
+    updateQuaternionFromEuler();
+}
+
+void ComplementaryEstimator::setAttitudeEuler(const Math::Vector3d& euler_rpy) {
+    state_.euler_rpy = Math::Vector3d(
+        Math::wrapAngle(euler_rpy.x()),
+        Math::wrapAngle(euler_rpy.y()),
+        Math::wrapAngle(euler_rpy.z()));
+    updateQuaternionFromEuler();
+}
+
 void ComplementaryEstimator::predict(double dt, const HAL::IMUSample& imu) {
     if (!imu.valid || dt <= 0.0) return;
 
@@ -32,9 +58,10 @@ void ComplementaryEstimator::predict(double dt, const HAL::IMUSample& imu) {
     double pitch = state_.euler_rpy.y();
     double yaw   = state_.euler_rpy.z();
 
+    // Standalone fusion (embedded): complementary filter on raw IMU.
     const double roll_gyro  = roll  + omega.x() * dt;
     const double pitch_gyro = pitch + omega.y() * dt;
-    const double yaw_gyro   = yaw   + omega.z() * dt;
+    yaw += omega.z() * dt;
 
     const double ax = accel.x();
     const double ay = accel.y();
@@ -47,7 +74,6 @@ void ComplementaryEstimator::predict(double dt, const HAL::IMUSample& imu) {
     double pitch_accel = pitch;
 
     if (a_mag > 0.5 * g_est && a_mag < 2.0 * g_est) {
-        // NED body: at level rest specific force ≈ [0, 0, −g].
         roll_accel  = std::atan2(ay, -az);
         pitch_accel = std::atan2(-ax, std::sqrt(ay * ay + az * az));
         trust = comp_alpha_;
@@ -55,20 +81,13 @@ void ComplementaryEstimator::predict(double dt, const HAL::IMUSample& imu) {
 
     roll  = trust * roll_gyro  + (1.0 - trust) * roll_accel;
     pitch = trust * pitch_gyro + (1.0 - trust) * pitch_accel;
-    yaw   = yaw_gyro;
 
-    roll  = Math::wrapAngle(roll);
-    pitch = Math::wrapAngle(pitch);
-    yaw   = Math::wrapAngle(yaw);
-
-    state_.euler_rpy = Math::Vector3d(roll, pitch, yaw);
+    state_.euler_rpy = Math::Vector3d(
+        Math::wrapAngle(roll),
+        Math::wrapAngle(pitch),
+        Math::wrapAngle(yaw));
     state_.angular_rate_body = omega;
-    state_.attitude =
-        Math::AngleAxisd(yaw,   Math::Vector3d::UnitZ()) *
-        Math::AngleAxisd(pitch, Math::Vector3d::UnitY()) *
-        Math::AngleAxisd(roll,  Math::Vector3d::UnitX());
-    state_.attitude.normalize();
-    state_.attitude_valid = true;
+    updateQuaternionFromEuler();
 }
 
 void ComplementaryEstimator::correctBaro(const HAL::BaroSample& baro) {

@@ -56,6 +56,7 @@ SimulationEngine::SimulationEngine(const std::string& config_hint)
     estimator_ = std::make_unique<Core::ComplementaryEstimator>(config_);
     sim_imu_   = std::make_unique<Platform::Sim::SimIMU>(imu_);
     sim_baro_  = std::make_unique<Platform::Sim::SimBarometer>(altimeter_);
+    sim_rc_    = std::make_unique<Platform::Sim::SimRCInput>();
 
     try {
         const auto v = config_.get<std::string>("simulation", "perfect_state");
@@ -66,6 +67,7 @@ SimulationEngine::SimulationEngine(const std::string& config_hint)
 
     flight_controller_ = std::make_unique<Flight::FlightController>(
         drone_, imu_, altimeter_, battery_sensor_, *estimator_, config_);
+    flight_controller_->setRCInput(sim_rc_.get());
 
     physics_.setInertiaTensor(drone_->getInertiaTensor());
     log.info("Physics engine initialised (RK4, NED frame)");
@@ -92,7 +94,6 @@ void SimulationEngine::stepPhysics() {
 
     const Math::Vector3d accel_world = state.acceleration;
     const Math::Vector3d gravity_world(0.0, 0.0, physics_.getGravity());
-  // MEMS specific force in body frame: proper acceleration minus gravity.
     const Math::Vector3d specific_force_world = accel_world - gravity_world;
     const Math::Vector3d accel_body =
         Math::worldToBody(state.orientation, specific_force_world);
@@ -101,13 +102,15 @@ void SimulationEngine::stepPhysics() {
     battery_sensor_->update(physics_dt_, drone_->getBatteryVoltage());
 
     estimator_->predict(physics_dt_, sim_imu_->read());
-    estimator_->correctBaro(sim_baro_->read());
-
     if (perfect_state_) {
+        estimator_->setAttitudeEuler(Math::quaternionToEuler(state.orientation));
         estimator_->injectPerfectNavigation(state.position, state.velocity);
     } else {
+        estimator_->setAttitudeRollPitch(imu_->getEstimatedRoll(),
+                                         imu_->getEstimatedPitch());
         estimator_->clearPerfectNavigation();
     }
+    estimator_->correctBaro(sim_baro_->read());
 
     flight_controller_->update(physics_dt_);
     drone_->update(physics_dt_, rho);
@@ -204,6 +207,14 @@ Core::ComplementaryEstimator& SimulationEngine::estimator() {
 
 const Core::ComplementaryEstimator& SimulationEngine::estimator() const {
     return *estimator_;
+}
+
+Platform::Sim::SimRCInput& SimulationEngine::rcInput() {
+    return *sim_rc_;
+}
+
+const Platform::Sim::SimRCInput& SimulationEngine::rcInput() const {
+    return *sim_rc_;
 }
 
 } // namespace Simulation

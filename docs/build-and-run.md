@@ -12,7 +12,16 @@
 ```bash
 mkdir -p build
 cd build
-cmake ..
+cmake -DAEROCORE_TARGET=sim ..
+cmake --build . -j"$(nproc)"
+```
+
+`AEROCORE_TARGET=sim` is the default simulator build. Use firmware-style targets when you want to build the portable core library without the GUI runner:
+
+```bash
+mkdir -p build-stm32
+cd build-stm32
+cmake -DAEROCORE_TARGET=stm32 -DAEROCORE_BUILD_TESTS=OFF ..
 cmake --build . -j"$(nproc)"
 ```
 

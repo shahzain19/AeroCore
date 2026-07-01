@@ -1,7 +1,7 @@
 # AeroCore YouTube Video Plan (9-10 Minutes)
 
 This is a practical production blueprint for a high-quality, curiosity-driven long-form video about AeroCore.  
-Target style: clean, cinematic, educational, fast pacing, strong narrative (inspired by channels like Veritasium, but with your own voice and without overproduction).
+Target style: clean, cinematic, educational, fast pacing, strong narrative, and minimal motion graphics — think Veritasium/Fern clarity without overproduction.
 
 ---
 
@@ -112,8 +112,8 @@ Then explain:
 
 ### Visual treatment
 
-- Highlight key lines with animated boxes.
-- Speed ramp sections to avoid long static terminal shots.
+- Keep visuals simple and direct: zoom, callouts, and text highlights, not motion graphics.
+- Speed-ramp longer terminal/code shots so the pace feels crisp without relying on animation.
 
 ---
 
@@ -213,7 +213,7 @@ Confident and honest, not apologetic.
 ## 4) Shot List (Production Checklist)
 
 ## Screen capture shots
-
+Use real screen captures and minimal overlays. Avoid full-motion animated sequences; instead, rely on tight edits, gradual reveals, and clear text callouts.
 - build and run commands
 - headless output with mode transitions
 - GUI render moments

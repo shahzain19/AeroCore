@@ -11,10 +11,15 @@ AeroCore is not a single binary for every board. The architecture is:
 │  HAL (IMU, Baro, GPS, RC, Motors, Clock)│  ← platform interface
 ├──────────────┬──────────────┬───────────┤
 │  Sim backend │  STM32 FW    │  ESP32 /  │
-│  (desktop)   │  (Betaflight │  Linux    │
-│              │   class FC)  │  SBC      │
+│  (desktop)   │  (firmware)  │  Linux    │
+│              │              │  SBC      │
 └──────────────┴──────────────┴───────────┘
 ```
+
+The current repo state is:
+
+- Desktop simulator: fully supported and runnable.
+- Firmware scaffolds: `AEROCORE_TARGET=stm32|linux-sbc|esp32` can configure and build the portable core library, but board-specific drivers and final firmware images are still under development.
 
 ---
 
@@ -22,7 +27,7 @@ AeroCore is not a single binary for every board. The architecture is:
 
 | Target | Status | Command |
 |--------|--------|---------|
-| Linux / macOS / Windows sim | **Supported** | `cmake .. && cmake --build .` |
+| Linux / macOS / Windows sim | **Supported** | `cmake -DAEROCORE_TARGET=sim .. && cmake --build .` |
 | Headless sim (CI, tuning) | **Supported** | `./AeroCore --headless` |
 | STM32 / ESP32 / RP2040 firmware | **Not yet** — use steps below when `firmware/` targets land | — |
 

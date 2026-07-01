@@ -49,13 +49,13 @@ max_thrust              = 8.0   # N   — per motor at full throttle
 #  Kp = 0.15 means 1m error → +0.15 throttle delta
 # ------------------------------------------------------------
 [pid_altitude]
-kp                  = 0.12
-ki                  = 0.015
-kd                  = 0.15
+kp                  = 0.18
+ki                  = 0.020
+kd                  = 0.10
 output_min          = -0.30
-output_max          =  0.30
-integral_max        =  0.15
-derivative_filter   =  0.25
+output_max          =  0.45
+integral_max        =  0.20
+derivative_filter   =  0.35
 
 # ------------------------------------------------------------
 #  Roll angle PID (outer: angle → rate command)
@@ -86,17 +86,17 @@ kd = 0.1
 # ------------------------------------------------------------
 [pid_roll_rate]
 kp              = 0.15
-ki              = 0.05
+ki              = 0.02
 kd              = 0.003
 derivative_filter = 0.2
-integral_max    = 0.3
+integral_max    = 0.2
 
 # ------------------------------------------------------------
 #  Pitch rate PID
 # ------------------------------------------------------------
 [pid_pitch_rate]
 kp              = 0.15
-ki              = 0.05
+ki              = 0.02
 kd              = 0.003
 derivative_filter = 0.2
 integral_max    = 0.3
@@ -120,6 +120,7 @@ max_roll_rate_deg_s     = 220.0 # degrees/s
 max_pitch_rate_deg_s    = 220.0 # degrees/s
 max_yaw_rate_deg_s      = 180.0 # degrees/s
 max_tilt_angle_deg      = 45.0  # combined tilt limit
+max_arm_angle_deg       = 15.0  # pre-arm level tolerance
 
 # ------------------------------------------------------------
 #  IMU sensor model
@@ -143,4 +144,4 @@ dt                  = 0.004     # s   — physics timestep (250 Hz)
 target_altitude     = 10.0      # m   — initial target altitude
 wind_x              = 0.0       # m/s — North component (positive = headwind)
 wind_y              = 0.0       # m/s — East component
-perfect_state       = true      # inject ground-truth position for POS_HOLD/RTH (sim only)
+perfect_state       = true      # true: ground-truth attitude/position for sim; false: IMU/GPS only

@@ -35,14 +35,25 @@ AeroCore/
 - CMake `3.22+`
 - C++20 compiler
 - Eigen3
-- SFML (`graphics`, `window`, `system`)
+- SFML (`graphics`, `window`, `system`) for simulator builds
 
 ## Build
+
+AeroCore defaults to the desktop simulator target. To build the simulator:
 
 ```bash
 mkdir -p build
 cd build
-cmake ..
+cmake -DAEROCORE_TARGET=sim ..
+cmake --build . -j"$(nproc)"
+```
+
+To prepare a firmware-style target scaffold without the simulator executable:
+
+```bash
+mkdir -p build-stm32
+cd build-stm32
+cmake -DAEROCORE_TARGET=stm32 -DAEROCORE_BUILD_TESTS=OFF ..
 cmake --build . -j"$(nproc)"
 ```
 
@@ -101,19 +112,22 @@ ctest --output-on-failure
 
 Current tests:
 
-- `test_pid_controller`
-- `test_config`
-- `test_telemetry_manager`
-- `test_cli_args`
-- `test_flight_mode`
-- `test_physics_engine`
-- `test_simulation_engine`
+- `test_pid_controller`: PID behavior, saturation, and anti-windup.
+- `test_config`: config parsing and key/value access.
+- `test_telemetry_manager`: HUD/status output formatting.
+- `test_cli_args`: command-line parsing and validation.
+- `test_flight_mode`: mode state transitions and requirement checks.
+- `test_physics_engine`: RK4 integration and environment model.
+- `test_simulation_engine`: full integration of FC, physics, and telemetry.
+- `test_estimator`: state estimation and sensor bias learning.
+- `test_pre_arm`: arming safety checks (throttle, level, sensors).
+- `test_imu_fusion`: IMU attitude filtering and fusion.
 
 ## Documentation
 
 - `docs/roadmap.md` — real-world feature plan (phased)
-- `docs/sim-to-production.md` — sim → firmware migration
-- `docs/embedded-installation.md` — build & flash on STM32, ESP32, Pi, etc.
+- `docs/sim-to-production.md` — sim → firmware migration path and current status
+- `docs/embedded-installation.md` — board support, build targets, and hardware porting notes
 - `docs/architecture.md`
 - `docs/build-and-run.md`
 - `docs/capabilities-and-limitations.md`

@@ -138,6 +138,7 @@ FlightController::FlightController(
     max_pitch_rate_  = tryGet("flight", "max_pitch_rate_deg_s", 220.0) * Math::DEG2RAD;
     max_yaw_rate_    = tryGet("flight", "max_yaw_rate_deg_s", 180.0) * Math::DEG2RAD;
     max_tilt_angle_  = tryGet("flight", "max_tilt_angle_deg",  45.0) * Math::DEG2RAD;
+    max_arm_angle_   = tryGet("flight", "max_arm_angle_deg",  15.0) * Math::DEG2RAD;
 
     // Hover throttle: the throttle fraction needed to sustain 1g in hover.
     // T_hover = m·g.  At full throttle we get max_total_thrust.
@@ -193,6 +194,12 @@ void FlightController::requestMode(FlightMode mode) {
 
 void FlightController::arm() {
     if (mode_ == FlightMode::DISARMED) {
+        syncPilotFromRC();
+        const auto reason = preArmStatus();
+        if (!reason.empty()) {
+            Utilities::Logger::getInstance().warning("Arm rejected: " + reason);
+            return;
+        }
         home_position_   = currentPositionNed();
         target_position_ = home_position_;
         // Reset all PID state to prevent integrator wind-up from a previous flight
@@ -265,6 +272,54 @@ void FlightController::setPilotInput(const PilotInput& input) {
     pilot_input_ = input;
 }
 
+void FlightController::setRCInput(HAL::IRCInput* rc_input) {
+    rc_input_ = rc_input;
+}
+
+void FlightController::syncPilotFromRC() {
+    if (!rc_input_) return;
+    const auto ch = rc_input_->read();
+    if (!ch.valid || ch.link_status == HAL::RCLinkStatus::Lost) return;
+    pilot_input_.roll     = ch.channels[0];
+    pilot_input_.pitch    = ch.channels[1];
+    pilot_input_.throttle = Math::clamp(ch.channels[2], 0.0, 1.0);
+    pilot_input_.yaw      = ch.channels[3];
+}
+
+bool FlightController::canArm() const {
+    return preArmStatus().empty();
+}
+
+std::string FlightController::preArmStatus() const {
+    if (mode_ != FlightMode::DISARMED) {
+        return "already armed or in flight";
+    }
+    if (!estimator_.state().attitude_valid) {
+        return "attitude estimate not ready";
+    }
+    const auto& euler = estimator_.state().euler_rpy;
+    if (std::abs(euler.x()) > max_arm_angle_ || std::abs(euler.y()) > max_arm_angle_) {
+        return "vehicle not level";
+    }
+    double throttle = pilot_input_.throttle;
+    if (rc_input_) {
+        const auto ch = rc_input_->read();
+        if (ch.valid && ch.channel_count >= 3) {
+            throttle = ch.channels[2];
+        }
+    }
+    if (throttle > 0.10) {
+        return "throttle not at minimum";
+    }
+    if (battery_sensor_->getVoltage() > 1.0 && drone_->getBatteryPercentage() < 10.0) {
+        return "battery too low";
+    }
+    if (rc_input_ && rc_input_->msSinceLastFrame() > 500) {
+        return "RC link lost";
+    }
+    return {};
+}
+
 // ============================================================
 //  Getters
 // ============================================================
@@ -328,6 +383,8 @@ void FlightController::enforceNavigationValidity() {
 // ============================================================
 
 void FlightController::update(double dt) {
+    syncPilotFromRC();
+
     // Recompute hover throttle each update (accounts for mass changes / motor config)
     const double T_max = drone_->getMaxTotalThrust();
     if (T_max > 1.0) {
@@ -386,7 +443,7 @@ void FlightController::updateTakeoff(double dt) {
     }
 
     const double throttle_cmd =
-        computeAltitudeThrottle(dt, takeoff_alt_ramp_, 0.05, false);
+        computeAltitudeThrottle(dt, takeoff_alt_ramp_, 0.05, true, true);
     runAttitudeControl(throttle_cmd, 0.0, 0.0, 0.0, dt);
 }
 
@@ -500,6 +557,7 @@ void FlightController::runAttitudeControl(double throttle_cmd,
                                            double yaw_rate_sp,
                                            double dt) {
     // Attitude from state estimator (IMU fusion), not physics ground truth.
+    // Attitude from state estimator (IMU fusion), not physics ground truth.
     const auto& euler = estimator_.state().euler_rpy;
     const auto& omega = imu_->getGyroscope().getAngularVelocity();
 
@@ -575,14 +633,19 @@ void FlightController::transitionToAltitudeHold() {
 
 double FlightController::computeAltitudeThrottle(double dt, double setpoint_alt,
                                                   double min_throttle,
-                                                  bool hover_floor) {
+                                                  bool hover_floor,
+                                                  bool climb_only) {
     const double measured_alt = altimeter_->getAltitude();
 
     if (measured_alt < 0.05 && pid_alt_->getIntegral() < 0.0) {
         pid_alt_->reset();
     }
 
-    const double throttle_delta = pid_alt_->update(dt, setpoint_alt, measured_alt);
+    double throttle_delta = pid_alt_->update(dt, setpoint_alt, measured_alt);
+    if (climb_only && setpoint_alt > measured_alt + 0.25) {
+        throttle_delta = std::max(throttle_delta, 0.0);
+    }
+
     double throttle_cmd = hover_throttle_ + throttle_delta;
 
     double floor = min_throttle;

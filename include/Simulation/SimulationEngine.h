@@ -23,6 +23,7 @@
 #include "Core/ComplementaryEstimator.h"
 #include "platforms/sim/SimIMU.h"
 #include "platforms/sim/SimBarometer.h"
+#include "platforms/sim/SimRCInput.h"
 
 #include <memory>
 #include <string>
@@ -60,6 +61,8 @@ public:
     const std::string& configPath() const;
     Core::ComplementaryEstimator& estimator();
     const Core::ComplementaryEstimator& estimator() const;
+    Platform::Sim::SimRCInput& rcInput();
+    const Platform::Sim::SimRCInput& rcInput() const;
 
 private:
     std::string config_path_;
@@ -73,6 +76,7 @@ private:
     std::unique_ptr<Core::ComplementaryEstimator>  estimator_;
     std::unique_ptr<Platform::Sim::SimIMU>       sim_imu_;
     std::unique_ptr<Platform::Sim::SimBarometer>   sim_baro_;
+    std::unique_ptr<Platform::Sim::SimRCInput>     sim_rc_;
     Physics::PhysicsEngine                         physics_;
 
     bool perfect_state_ = true;

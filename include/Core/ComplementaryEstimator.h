@@ -26,6 +26,12 @@ public:
 
     const HAL::VehicleState& state() const override { return state_; }
 
+    /// Apply fused roll/pitch from an external IMU (sim or driver).
+    void setAttitudeRollPitch(double roll_rad, double pitch_rad);
+
+    /// Set full attitude euler (roll, pitch, yaw) — sim ground-truth injection.
+    void setAttitudeEuler(const Math::Vector3d& euler_rpy);
+
     /// Sim/dev: feed ground-truth navigation (position hold / RTH without GPS model).
     void injectPerfectNavigation(const Math::Vector3d& position_ned,
                                  const Math::Vector3d& velocity_ned);
@@ -36,6 +42,8 @@ private:
     HAL::VehicleState state_;
     double comp_alpha_{0.98};
     bool   perfect_nav_{false};
+
+    void updateQuaternionFromEuler();
 };
 
 } // namespace Core
